@@ -3,3 +3,4 @@
 venv/*
 api_keys/*
 tmp/*
+positions/*
