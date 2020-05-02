@@ -9,8 +9,8 @@ __pycache__/
 venv/*
 api_keys/*
 tmp/*
-positions/*
+inputs/positions.csv
 
-stock_data_manager/logs/*
-stock_data_manager/data/*
+project/logs/*
+project/data/*
 
