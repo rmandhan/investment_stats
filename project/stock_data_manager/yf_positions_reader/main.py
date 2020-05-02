@@ -35,7 +35,6 @@ class YFPositionsReader():
         return csv_rows
 
     def parse_csv(self, csv_rows: List) -> List[Position]:
-
         # Mapping of symbol to transactions
         symbol_transactions = {}
         positions = []

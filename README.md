@@ -1,1 +1,1 @@
-### Investment Statistics
+### Investment Stats
