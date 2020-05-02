@@ -60,7 +60,7 @@ class YFPositionsReader():
             position = Position(symbol=symbol, transactions=symbol_transactions[symbol])
             positions.append(position)
 
-        self.logger.info('Successfully read all positions')
+        self.logger.info('Successfully parsed all positions')
 
         return positions
 

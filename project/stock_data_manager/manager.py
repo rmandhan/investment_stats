@@ -47,11 +47,10 @@ class StockDataManager:
         pos_reader = YFPositionsReader(file=YF_POSITIONS_FILE)
         positions = pos_reader.run()
         symbols = {}
-        # for pos in positions:
-            # pos.pretty_print()
+        for pos in positions:
+            print(pos)
         for pos in positions:
             symbols[pos.symbol] = 1
-        # print(symbols)
         sf_reader = StockFileReader(file=INDEX_TRACKERS_FILE)
         index_trackers = sf_reader.run()
         for it in index_trackers:

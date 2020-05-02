@@ -8,16 +8,22 @@ class Transaction():
         self.quantity = quantity
         self.purchase_price = purchase_price
 
+    def __str__(self):
+        return 'Trade Date: {}, Quantity: {:<5s}, Purchase Price: {:<7s}'.format(self.trade_date, self.quantity, self.purchase_price)
+
 class Position():
 
     def __init__(self, symbol: str, transactions: List[Transaction]):
         self.symbol = symbol
         self.transactions = transactions
 
-    def pretty_print(self):
-        print('Symbol: {}'.format(self.symbol))
+    def __str__(self):
+        text_list = []
+        text_list.append('Symbol: {}'.format(self.symbol))
         for trans in self.transactions:
-            print('Trade Date: {}, Quantity: {:<5s}, Purchase Price: {:<7s}'.format(trans.trade_date, trans.quantity, trans.purchase_price))
+            text_list.append(str(trans))
+        text = '\n'.join(text_list)
+        return text
 
 class DayQuote():
 
@@ -25,13 +31,19 @@ class DayQuote():
         self.date = date
         self.price = price
 
+    def __str__(self):
+        return 'Date: {}, Price: {}'.format(self.date, self.price)
+
 class Stock():
 
     def __init__(self, symbol: str, day_quotes=List[DayQuote]):
-        self.symbol = Symbol
+        self.symbol = symbol
         self.day_quotes = day_quotes
 
-    def pretty_print(self):
-        print('Symbol: {}'.format(self.symbol))
+    def __str__(self):
+        text_list = []
+        text_list.append('Symbol: {}'.format(self.symbol))
         for day_quote in self.day_quotes:
-            print('Date: {}, Price: {}'.format(day_quote.date, day_quote.price))
+            text_list.append(str(day_quote))
+        text = '\n'.join(text_list)
+        return text
