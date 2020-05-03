@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+import jsonpickle
 
 from typing import Dict
 from ..data_types import *
@@ -45,56 +46,63 @@ class DataStore():
             return 0
         return 1
 
-    def _perform_write_checks(self, file: str):
-        f_dir = os.path.splitext(file)[0]
+    def _perform_write_checks(self, file: str, obj: object):
+        f_dir = os.path.dirname(file)
         if not os.path.exists(f_dir):
             os.makedirs(f_dir)
+        if 'toJSON' not in dir(obj):
+            self.logger.error('toJSON function not defined for {}'.format(type(obj)))
+            raise TypeError
 
-    def _read_json(self, file: str) -> Dict:
+    def _read_data(self, file: str) -> str:
         with open(file) as f:
-            data = json.load(f)
+            data = f.read()
             return data
 
-    def _write_json(self, file: str, data: object):
-        with open(file, 'w') as json_file:
-            json.dump(obj=data.__dict__, fp=fp, indent=4)
+    def _write_data(self, file: str, data: object):
+        with open(file, 'w') as file:
+            file.write(data.toJSON())
 
     def read_stock_metadata(self, symbol: str) -> StockMetaData:
         fp = self._get_stock_metadata_fp(symbol=symbol)
         self.logger.info('Reading metadata from {}'.format(fp))
         if not self._read_checks_pass(file=fp): return None
-        data = self._read_json(file=fp)
-        print(data)
+        data = self._read_data(file=fp)
+        metadata = json.loads(data, object_hook=DataDecoder.object_hook)
+        return metadata
+        return None
 
     def read_stock_latest(self, symbol: str) -> StockLatest:
         fp = self._get_stock_latest_fp(symbol=symbol)
         self.logger.info('Reading latest stock data from {}'.format(fp))
         if not self._read_checks_pass(file=fp): return None
-        data = self._read_json(file=fp)
-        print(data)
+        data = self._read_data(file=fp)
+        latest = json.loads(data, object_hook=DataDecoder.object_hook)
+        return latest
 
     # For now, historical means day data
     def read_stock_historical(self, symbol: str) -> StockHistorical:
         fp = self._get_stock_historical_fp(symbol=symbol)
         self.logger.info('Reading historical stock data from {}'.format(fp))
         if not self._read_checks_pass(file=fp): return None
-        data = self._read_json(file=fp)
-        print(data)
+        data = self._read_data(file=fp)
+        historical = json.loads(data, object_hook=DataDecoder.object_hook)
+        return historical
 
     def write_stock_metadata(self, symbol: str, metadata: StockMetaData):
         fp = self._get_stock_metadata_fp(symbol=symbol)
         self.logger.info('Writing metadata to {}'.format(fp))
-        self._perform_write_checks(file=fp)
-        self._write_json(file=fp, data=metadata)
+        self._perform_write_checks(file=fp, obj=metadata)
+        self._write_data(file=fp, data=metadata)
         
     def write_stock_latest(self, symbol: str, latest: StockLatest):
         fp = self._get_stock_latest_fp(symbol=symbol)
         self.logger.info('Writing latest stock data to {}'.format(fp))
-        self._perform_write_checks(file=fp)
-        self._write_json(file=fp, data=metadata)
+        self._perform_write_checks(file=fp, obj=latest)
+        self._write_data(file=fp, data=latest)
     
     def write_stock_historical(self, symbol: str, historical: StockHistorical):
         fp = self._get_stock_historical_fp(symbol=symbol)
         self.logger.info('Writing historical stock data to {}'.format(fp))
-        self._perform_write_checks(file=fp)
-        self._write_json(file=fp, data=metadata)
+        self._perform_write_checks(file=fp, obj=historical)
+        self._write_data(file=fp, data=historical)

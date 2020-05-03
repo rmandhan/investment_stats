@@ -100,22 +100,21 @@ class StockDataManager:
         # Initialize data store
         ds = DataStore(data_dir=STOCK_DATA_DIR)
 
-        print(self.all_symbols)
+        # print(self.all_symbols)
 
         # Update data
-        # for symbol in self.all_symbols:
-        for symbol in ['AAPL']:
+        for symbol in self.all_symbols:
             # Read data from local storage
             metadata = ds.read_stock_metadata(symbol=symbol)
             latest = ds.read_stock_latest(symbol=symbol)
             historical = ds.read_stock_historical(symbol=symbol)
             # # Fetch/update metadata and latest quote for all symbols using IEX API
-            # iex = IEXAPI(api_key_path=IEX_API_KEY)
-            # metadata, updated = iex.update_metadata(metadata=metadata)
-            # latest, updated = iex.update_metadata(latest=latest)
-            # # Update local storage
-            # if updated: ds.write_stock_metadata(symbol=symbol, metadata=metadata)
-            # if updated: ds.write_stock_latest(symbol=symbol, latest=latest)
+            iex = IEXAPI(api_key_path=IEX_API_KEY)
+            metadata, updated = iex.update_metadata(symbol=symbol, metadata=metadata)
+            latest, updated = iex.update_latest(symbol=symbol, latest=latest)
+            # Update local storage
+            if updated: ds.write_stock_metadata(symbol=symbol, metadata=metadata)
+            if updated: ds.write_stock_latest(symbol=symbol, latest=latest)
             # # Fetch/update historical data for all symbols using Tiingo API
             # tiingo = TiingoAPI(api_key_path=TIINGO_API_KEY)
             # historical, updated = tiingo.update_historical(historical=historical)

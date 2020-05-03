@@ -5,7 +5,6 @@ import logging
 from typing import List
 from datetime import datetime
 
-from . import csv_keys
 from ..data_types import *
 
 class YFPositionsReader():
@@ -40,10 +39,10 @@ class YFPositionsReader():
         positions = []
 
         for row in csv_rows:
-            symbol = row[csv_keys.SYMBOL]
-            quantity = row[csv_keys.QUANTITY]
-            purchase_price = row[csv_keys.PURCHASE_PRICE]
-            trade_date = row[csv_keys.TRADE_DATE]
+            symbol = row['Symbol']
+            quantity = row['Quantity']
+            purchase_price = row['Purchase Price']
+            trade_date = row['Trade Date']
             # Convert date to datetime
             trade_date = datetime.strptime(trade_date, '%Y%m%d')
             # Create a transaction
