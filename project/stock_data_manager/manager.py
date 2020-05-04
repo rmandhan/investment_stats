@@ -62,7 +62,7 @@ class StockDataManager:
             symbols[stock] = 1
         return symbols.keys()
 
-    def _generate_stock(metadata: StockMetaData, latest: StockLatest, historical: StockHistorical) -> Stock:
+    def _generate_stock(self, metadata: StockMetaData, latest: StockLatest, historical: StockHistorical) -> Stock:
         stock = Stock(symbol=metadata.symbol, company_name=metadata.company_name, industry=metadata.industry, issue_type=metadata.issue_type, latest_quote=latest.quote, day_quotes=historical.day_quotes)
         return stock
 
@@ -100,27 +100,28 @@ class StockDataManager:
         # Initialize data store
         ds = DataStore(data_dir=STOCK_DATA_DIR)
 
-        # print(self.all_symbols)
-
         # Update data
         for symbol in self.all_symbols:
             # Read data from local storage
             metadata = ds.read_stock_metadata(symbol=symbol)
             latest = ds.read_stock_latest(symbol=symbol)
             historical = ds.read_stock_historical(symbol=symbol)
-            # # Fetch/update metadata and latest quote for all symbols using IEX API
+            # Fetch/update metadata and latest quote for all symbols using IEX API
             iex = IEXAPI(api_key_path=IEX_API_KEY)
             metadata, updated = iex.update_metadata(symbol=symbol, metadata=metadata)
             latest, updated = iex.update_latest(symbol=symbol, latest=latest)
             # Update local storage
             if updated: ds.write_stock_metadata(symbol=symbol, metadata=metadata)
             if updated: ds.write_stock_latest(symbol=symbol, latest=latest)
-            # # Fetch/update historical data for all symbols using Tiingo API
-            # tiingo = TiingoAPI(api_key_path=TIINGO_API_KEY)
-            # historical, updated = tiingo.update_historical(historical=historical)
-            # # Update local storage
-            # if updated: ds.write_stock_historical(historical=historical)
-            # # Append stock data to final output
-            # self.stock_data.append(self._generate_stock(metadata=metadata, latest=latest, historical=historical))
+            # Fetch/update historical data for all symbols using Tiingo API
+            tiingo = TiingoAPI(api_key_path=TIINGO_API_KEY)
+            historical, updated = tiingo.update_historical(symbol=symbol, historical=historical)
+            # Update local storage
+            if updated: ds.write_stock_historical(symbol=symbol, historical=historical)
+            # Append stock data to final output
+            self.stock_data.append(self._generate_stock(metadata=metadata, latest=latest, historical=historical))
+            self.logger.info('Successfully refreshed data for {}'.format(symbol))
+
+        self.logger.info('Finished processing for {} symbols'.format(len(self.all_symbols)))
 
         return 0

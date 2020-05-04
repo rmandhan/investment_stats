@@ -33,7 +33,7 @@ class Quote():
         self.volume = volume
 
     def __str__(self):
-        return 'Date: {}, High: {:<6s}, Low: {:<6s}, Open: {:<6s}, Close: {:<6s}, Volume: {}'.format(self.date, self.high, self.low, self.open, self.close, self.volume)
+        return 'Date: {}, High: {:<6f}, Low: {:<6f}, Open: {:<6f}, Close: {:<6f}, Volume: {}'.format(self.date, self.high, self.low, self.open, self.close, self.volume)
 
     def toObject(dict):
         return Quote(date=datetime.fromisoformat(dict['date']), high=dict['high'], low=dict['low'], open=dict['open'], close=dict['close'], volume=dict['volume'])
@@ -45,7 +45,7 @@ class Stock():
         self.symbol = symbol
         self.company_name = company_name
         self.industry = industry
-        self.issue_type = issuetype
+        self.issue_type = issue_type
         self.latest_quote = latest_quote
         self.day_quotes = day_quotes
 
@@ -107,5 +107,4 @@ class StockHistorical():
         return json.dumps(self, cls=DataEncoder, sort_keys=True, indent=4)
     
     def toObject(dict):
-        print(dict)
-        return None
+        return StockHistorical(sync_date=datetime.fromisoformat(dict['sync_date']), earliest_date=datetime.fromisoformat(dict['earliest_date']), latest_date=datetime.fromisoformat(dict['latest_date']), day_quotes=dict['day_quotes'])

@@ -1,8 +1,14 @@
 import logging
 import tiingo
 
+from tiingo import TiingoClient
 from typing import Tuple
 from ..data_types import *
+
+# Tiingo provides at max 5 year old historical data (for free)
+START_DATE='2015-01-01'
+
+# Tiingo API only provides EOD historical data
 
 class TiingoAPI():
 
@@ -15,6 +21,26 @@ class TiingoAPI():
         with open(file) as fp:
             line = fp.readline()
             return line.strip()
-    
-    def update_historical(self, historical: StockHistorical) -> Tuple[StockHistorical, bool]:
-        return historical, 0
+
+    def _should_sync_historical(self, date: datetime) -> bool:
+        if datetime.now().date() == date.date():
+            return 0
+        return 1
+
+    def update_historical(self, symbol: str, historical: StockHistorical) -> Tuple[StockHistorical, bool]:
+        if historical is not None and not self._should_sync_historical(date=historical.sync_date):
+            self.logger.info('Historical stock data already up to date')
+            return historical, 0
+        self.logger.info('Updating historical stock data')
+        now = datetime.now()
+        tiingo = TiingoClient(config={'api_key': self.key})
+        h_data = tiingo.get_ticker_price(ticker=symbol, startDate=START_DATE)
+        quotes = []
+        for q in h_data:
+            quote = Quote(date=datetime.fromisoformat(q['date'].replace('Z', '+00:00')), high=q['high'], low=q['low'], open=q['open'], close=q['close'], volume=q['volume'])
+            quotes.append(quote)
+        earliest_date = quotes[0].date
+        latest_date = quotes[len(quotes)-1].date
+        historical = StockHistorical(sync_date=now, earliest_date=earliest_date, latest_date=latest_date, day_quotes=quotes)
+        self.logger.info('Successfully fetched historical stock data')
+        return historical, 1
