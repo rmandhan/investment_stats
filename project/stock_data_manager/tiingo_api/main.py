@@ -31,16 +31,35 @@ class TiingoAPI():
         if historical is not None and not self._should_sync_historical(date=historical.sync_date):
             self.logger.info('Historical stock data already up to date')
             return historical, 0
-        self.logger.info('Updating historical stock data')
+        else:
+            self.logger.info('Updating historical stock data')
+
+        update_in_place = historical is not None
+        if update_in_place:
+            self.logger.info('Will update historical stock data in-place')
+        else:
+            self.logger.info('Will fetch max(5 years, inception date) historical data')
+
+        start_date = historical.sync_date if update_in_place else START_DATE
         now = datetime.now()
         tiingo = TiingoClient(config={'api_key': self.key})
-        h_data = tiingo.get_ticker_price(ticker=symbol, startDate=START_DATE)
+        h_data = tiingo.get_ticker_price(ticker=symbol, startDate=start_date)
         quotes = []
         for q in h_data:
             quote = Quote(date=datetime.fromisoformat(q['date'].replace('Z', '+00:00')), high=q['high'], low=q['low'], open=q['open'], close=q['close'], volume=q['volume'])
             quotes.append(quote)
-        earliest_date = quotes[0].date
+
+        earliest_date = historical.day_quotes[0].date if update_in_place else quotes[0].date
         latest_date = quotes[len(quotes)-1].date
-        historical = StockHistorical(sync_date=now, earliest_date=earliest_date, latest_date=latest_date, day_quotes=quotes)
+
+        if update_in_place:
+            historical.sync_date = now
+            historical.earliest_date = earliest_date
+            historical.latest_date = latest_date
+            historical.day_quotes = historical.day_quotes+quotes
+        else:
+            historical = StockHistorical(sync_date=now, earliest_date=earliest_date, latest_date=latest_date, day_quotes=quotes)
+
         self.logger.info('Successfully fetched historical stock data')
+
         return historical, 1

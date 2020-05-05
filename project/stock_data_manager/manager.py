@@ -18,7 +18,7 @@ LOGDIR = '{}/logs'.format(sys.path[0])
 # Inputs
 YF_POSITIONS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/positions.csv'
 INDEX_TRACKERS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/index_trackers.yml'
-STOCKS_LIST_FILE = '/Users/rakesh/Developer/investment_stats/inputs/stocks_list.yml'
+WATCHLIST_STOCKS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/watchlist.yml'
 
 # Outputs/Storage
 STOCK_DATA_DIR = '/Users/rakesh/Developer/investment_stats/data'
@@ -32,10 +32,10 @@ class StockDataManager:
     def __init__(self):
         self._setup_logger()
         self.all_symbols = []
-        self.index_trackers = []
-        self.stock_list = []
+        self.index_tracker_stocks = []
+        self.watchlist_stocks = []
+        self.position_stocks = []
         self.positions = []
-        self.stock_data = []
 
     def _setup_logger(self):
         logger = logging.getLogger('StockDataManager')
@@ -54,13 +54,17 @@ class StockDataManager:
         logger.debug('Logger Intialized')
         self.logger = logger
 
-    def _extract_symbols(self, positions: [Position], stock_inputs: List[str]) -> List[str]:
-        symbols = {}
+    def _extract_symbols(self, positions: [Position]) -> List[str]:
+        symbols = []
         for pos in positions:
-            symbols[pos.symbol] = 1
-        for stock in stock_inputs:
-            symbols[stock] = 1
-        return symbols.keys()
+            symbols.append(pos.symbol)
+        return symbols
+
+    def _remove_duplicats(self, symbols: List[str]) -> List[str]:
+        d = {}
+        for s in symbols:
+            d[s] = 1
+        return d.keys()
 
     def _generate_stock(self, metadata: StockMetaData, latest: StockLatest, historical: StockHistorical) -> Stock:
         stock = Stock(symbol=metadata.symbol, company_name=metadata.company_name, industry=metadata.industry, issue_type=metadata.issue_type, latest_quote=latest.quote, day_quotes=historical.day_quotes)
@@ -69,14 +73,14 @@ class StockDataManager:
     def get_all_symbols() -> List[str]:
         return self.all_symbols
 
-    def get_index_trackers() -> List[str]:
-        return self.index_trackers
+    def get_index_tracker_stocks() -> List[Stock]:
+        return self.index_tracker_stocks
 
-    def get_stock_list() -> List[str]:
-        return self.stock_list
+    def get_watchlist_stocks() -> List[Stock]:
+        return self.watchlist_stocks
 
-    def get_stocks() -> List[Stock]:
-        return self.stock_data
+    def get_position_stocks() -> List[Stock]:
+        return self.position_stocks
     
     def get_positions() -> List[Position]:
         return self.positions
@@ -91,14 +95,19 @@ class StockDataManager:
         positions = pos_reader.run()
         sf_reader = StockFileReader(file=INDEX_TRACKERS_FILE)
         index_trackers = sf_reader.run()
-        sf_reader = StockFileReader(file=STOCKS_LIST_FILE)
-        stocks_list = sf_reader.run()
+        sf_reader = StockFileReader(file=WATCHLIST_STOCKS_FILE)
+        watchlist = sf_reader.run()
 
-        # Create a list of unique symbols
-        self.all_symbols = self._extract_symbols(positions=positions, stock_inputs=index_trackers+stocks_list)
+        self.positions = positions
+        position_symbols = self._extract_symbols(positions=positions)
+
+        # Create a list of all the symbols
+        self.all_symbols = self._remove_duplicats(symbols=position_symbols+index_trackers+watchlist)
 
         # Initialize data store
         ds = DataStore(data_dir=STOCK_DATA_DIR)
+
+        stock_data = []
 
         # Update data
         for symbol in self.all_symbols:
@@ -119,8 +128,17 @@ class StockDataManager:
             # Update local storage
             if updated: ds.write_stock_historical(symbol=symbol, historical=historical)
             # Append stock data to final output
-            self.stock_data.append(self._generate_stock(metadata=metadata, latest=latest, historical=historical))
+            stock_data.append(self._generate_stock(metadata=metadata, latest=latest, historical=historical))
             self.logger.info('Successfully refreshed data for {}'.format(symbol))
+
+        # Create the various list of stocks
+        for stock in stock_data:
+            if stock.symbol in index_trackers:
+                self.index_tracker_stocks.append(stock)
+            if stock.symbol in watchlist:
+                self.watchlist_stocks.append(stock)
+            if stock.symbol in position_symbols:
+                self.position_stocks.append(stock)
 
         self.logger.info('Finished processing for {} symbols'.format(len(self.all_symbols)))
 
