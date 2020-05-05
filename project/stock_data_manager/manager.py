@@ -85,32 +85,11 @@ class StockDataManager:
     def get_positions() -> List[Position]:
         return self.positions
 
-    def refresh():
-        self.run()
-
-    def run(self):
-
-        # Extract data from inputs
-        pos_reader = YFPositionsReader(file=YF_POSITIONS_FILE)
-        positions = pos_reader.run()
-        sf_reader = StockFileReader(file=INDEX_TRACKERS_FILE)
-        index_trackers = sf_reader.run()
-        sf_reader = StockFileReader(file=WATCHLIST_STOCKS_FILE)
-        watchlist = sf_reader.run()
-
-        self.positions = positions
-        position_symbols = self._extract_symbols(positions=positions)
-
-        # Create a list of all the symbols
-        self.all_symbols = self._remove_duplicats(symbols=position_symbols+index_trackers+watchlist)
-
+    def fetch_stock_data(self, symbols: List[str]) -> List[Stock]:
+        stock_data = []
         # Initialize data store
         ds = DataStore(data_dir=STOCK_DATA_DIR)
-
-        stock_data = []
-
-        # Update data
-        for symbol in self.all_symbols:
+        for symbol in symbols:
             # Read data from local storage
             metadata = ds.read_stock_metadata(symbol=symbol)
             latest = ds.read_stock_latest(symbol=symbol)
@@ -130,6 +109,29 @@ class StockDataManager:
             # Append stock data to final output
             stock_data.append(self._generate_stock(metadata=metadata, latest=latest, historical=historical))
             self.logger.info('Successfully refreshed data for {}'.format(symbol))
+        return stock_data
+
+    def refresh():
+        self.run()
+
+    def run(self):
+
+        # Extract data from inputs
+        pos_reader = YFPositionsReader(file=YF_POSITIONS_FILE)
+        positions = pos_reader.run()
+        sf_reader = StockFileReader(file=INDEX_TRACKERS_FILE)
+        index_trackers = sf_reader.run()
+        sf_reader = StockFileReader(file=WATCHLIST_STOCKS_FILE)
+        watchlist = sf_reader.run()
+
+        self.positions = positions
+        position_symbols = self._extract_symbols(positions=positions)
+
+        # Create a list of all the symbols
+        self.all_symbols = self._remove_duplicats(symbols=position_symbols+index_trackers+watchlist)
+
+        # Update data
+        stock_data = self.fetch_stock_data(symbols=self.all_symbols)
 
         # Create the various list of stocks
         for stock in stock_data:
