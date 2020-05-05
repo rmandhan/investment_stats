@@ -40,10 +40,16 @@ class TiingoAPI():
         else:
             self.logger.info('Will fetch max(5 years, inception date) historical data')
 
-        start_date = historical.sync_date if update_in_place else START_DATE
+        start_date = historical.latest_date if update_in_place else START_DATE
         now = datetime.now()
         tiingo = TiingoClient(config={'api_key': self.key})
         h_data = tiingo.get_ticker_price(ticker=symbol, startDate=start_date)
+
+        if len(h_data) is 0:
+            self.logger.info('No new historical data found after : {}'.format(historical.latest_date))
+            historical.sync_date = now
+            return historical, 0
+
         quotes = []
         for q in h_data:
             quote = Quote(date=datetime.fromisoformat(q['date'].replace('Z', '+00:00')), high=q['high'], low=q['low'], open=q['open'], close=q['close'], volume=q['volume'])
