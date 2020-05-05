@@ -70,19 +70,19 @@ class StockDataManager:
         stock = Stock(symbol=metadata.symbol, company_name=metadata.company_name, industry=metadata.industry, issue_type=metadata.issue_type, latest_quote=latest.quote, day_quotes=historical.day_quotes)
         return stock
 
-    def get_all_symbols() -> List[str]:
+    def get_all_symbols(self) -> List[str]:
         return self.all_symbols
 
-    def get_index_tracker_stocks() -> List[Stock]:
+    def get_index_tracker_stocks(self) -> List[Stock]:
         return self.index_tracker_stocks
 
-    def get_watchlist_stocks() -> List[Stock]:
+    def get_watchlist_stocks(self) -> List[Stock]:
         return self.watchlist_stocks
 
-    def get_position_stocks() -> List[Stock]:
+    def get_position_stocks(self) -> List[Stock]:
         return self.position_stocks
     
-    def get_positions() -> List[Position]:
+    def get_positions(self) -> List[Position]:
         return self.positions
 
     def fetch_stock_data(self, symbols: List[str]) -> List[Stock]:
