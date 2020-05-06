@@ -1,6 +1,7 @@
 import logging
 import tiingo
 
+from datetime import datetime, timedelta
 from tiingo import TiingoClient
 from typing import Tuple
 from ..data_types import *
@@ -40,7 +41,7 @@ class TiingoAPI():
         else:
             self.logger.info('Will fetch max(5 years, inception date) historical data')
 
-        start_date = historical.latest_date if update_in_place else START_DATE
+        start_date = historical.latest_date + timedelta(days=1) if update_in_place else START_DATE
         now = datetime.now()
         tiingo = TiingoClient(config={'api_key': self.key})
         h_data = tiingo.get_ticker_price(ticker=symbol, startDate=start_date)
@@ -48,7 +49,7 @@ class TiingoAPI():
         if len(h_data) is 0:
             self.logger.info('No new historical data found after : {}'.format(historical.latest_date))
             historical.sync_date = now
-            return historical, 0
+            return historical, 1
 
         quotes = []
         for q in h_data:
