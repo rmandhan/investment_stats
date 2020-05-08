@@ -53,6 +53,11 @@ class IEXAPI():
         now = datetime.now()
         iex = IEXClient(symbols=symbol, token=self.key)
         q = iex.get_quote()
+        # Sometimes latest quote information isn't available depending on the time you query
+        if q['close'] is None:
+            self.logger.info('Latest stock data currently unavailable')
+            latest.sync_date = now
+            return latest, 1
         date = datetime.fromtimestamp(q['latestUpdate']/1000)
         quote = Quote(date=date, high=q['high'], low=q['low'], open=q['open'], close=q['close'], volume=q['volume'])
         latest = StockLatest(sync_date=now, quote=quote)
