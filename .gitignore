@@ -7,11 +7,12 @@ __pycache__/
 *$py.class
 
 venv/*
-api_keys/*
 tmp/*
-inputs/positions.csv
+project/logs/*
 notebooks/*
 
-project/logs/*
+# Sensitive Inputs
+api_keys/*
+inputs/positions.csv
+# Data Store
 data/*
-
