@@ -4,8 +4,7 @@ import logging
 
 from typing import List
 from datetime import datetime
-
-from ..data_types import *
+from data_types import *
 
 class YFPositionsReader():
 

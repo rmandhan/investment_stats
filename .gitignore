@@ -10,6 +10,7 @@ venv/*
 api_keys/*
 tmp/*
 inputs/positions.csv
+notebooks/*
 
 project/logs/*
 data/*

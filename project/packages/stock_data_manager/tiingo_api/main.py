@@ -4,7 +4,7 @@ import tiingo
 from datetime import datetime, timedelta
 from tiingo import TiingoClient
 from typing import Tuple
-from ..data_types import *
+from data_types import *
 
 # Tiingo provides at max 5 year old historical data (for free)
 START_DATE='2015-01-01'

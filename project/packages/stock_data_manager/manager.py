@@ -1,11 +1,11 @@
-import os
 import sys
+import os
 import logging
 import logging.handlers
 
 from typing import List, Dict
+from data_types import *
 
-from .data_types import *
 from .yf_positions_reader import *
 from .stock_file_reader import *
 from .data_store import *
@@ -143,5 +143,5 @@ class StockDataManager:
                 self.position_stocks.append(stock)
 
         self.logger.info('Finished processing for {} symbols'.format(len(self.all_symbols)))
-
+        
         return 0

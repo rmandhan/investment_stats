@@ -4,7 +4,7 @@ import json
 import jsonpickle
 
 from typing import Dict
-from ..data_types import *
+from data_types import *
 
 class DataStore():
 

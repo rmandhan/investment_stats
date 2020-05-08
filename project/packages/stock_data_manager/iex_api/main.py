@@ -4,7 +4,7 @@ import time
 from typing import Tuple
 from datetime import datetime, timedelta
 from iexfinance.stocks import Stock as IEXClient
-from ..data_types import *
+from data_types import *
 
 METADATA_THRESHOLD=timedelta(days=7)
 LATEST_THRESHOLD=timedelta(minutes=5)

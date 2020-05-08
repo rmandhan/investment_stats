@@ -1,5 +1,6 @@
 import sys
 import json
+import pandas as pd
 
 from datetime import date
 from datetime import datetime
@@ -23,6 +24,13 @@ class DataDecoder():
 
 class Quote():
 
+    _date_key = 'date'
+    _high_key = 'high'
+    _low_key = 'low'
+    _open_key = 'open'
+    _close_key = 'close'
+    _volume_key = 'volume'
+
     def __init__(self, date: datetime, high: float, low: float, open: float, close: float, volume: float):
         self._class = self.__class__.__name__
         self.date = date
@@ -36,9 +44,14 @@ class Quote():
         return 'Date: {}, High: {:<6f}, Low: {:<6f}, Open: {:<6f}, Close: {:<6f}, Volume: {}'.format(self.date, self.high, self.low, self.open, self.close, self.volume)
 
     def toObject(dict):
-        return Quote(date=datetime.fromisoformat(dict['date']), high=dict['high'], low=dict['low'], open=dict['open'], close=dict['close'], volume=dict['volume'])
+        return Quote(date=datetime.fromisoformat(dict[Quote._date_key]), high=dict[Quote._high_key], low=dict[Quote._low_key], open=dict[Quote._open_key], close=dict[Quote._close_key], volume=dict[Quote._volume_key])
 
 class Stock():
+
+    _symbol_key = 'symbol'
+    _company_name_key = 'company_name'
+    _industry_key = 'industry'
+    _issue_type_key = 'issue_type'
 
     def __init__(self, symbol: str, company_name: str, industry: str, issue_type: str, latest_quote: Quote, day_quotes: List[Quote]):
         self._class = self.__class__.__name__
@@ -59,6 +72,29 @@ class Stock():
             text_list.append(str(day_quote))
         text = '\n'.join(text_list)
         return text
+
+    def df(self) -> pd.DataFrame:
+        date_a, high_a, low_a, open_a, close_a, volume_a = [], [], [], [], [], []
+        all_quotes = self.day_quotes+[self.latest_quote]
+        for q in all_quotes:
+            date_a.append(q.date)
+            high_a.append(q.high)
+            low_a.append(q.low)
+            open_a.append(q.open)
+            close_a.append(q.close)
+            volume_a.append(q.volume)
+        data = { self._symbol_key: self.symbol,
+                 self._company_name_key: self.company_name,
+                 self._industry_key: self.industry,
+                 self._issue_type_key: self.issue_type,
+                 Quote._date_key: date_a,
+                 Quote._high_key: high_a,
+                 Quote._low_key: low_a,
+                 Quote._open_key: open_a,
+                 Quote._close_key: close_a,
+                 Quote._volume_key: volume_a }
+        df = pd.DataFrame(data)
+        return df
 
 ### Data models for reading/writing stock data ####
 

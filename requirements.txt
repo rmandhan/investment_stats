@@ -6,6 +6,9 @@ PyYAML
 jupyter_contrib_nbextensions
 jupyter_nbextensions_configurator
 plotly
-ipywidgets>=7.2
+ipywidgets
 dash
 bokeh
+jupyterlab-dash
+numpy
+pandas
