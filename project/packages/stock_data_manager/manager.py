@@ -7,7 +7,7 @@ from typing import List, Dict
 from data_types import *
 
 from .yf_positions_reader import *
-from .stock_file_reader import *
+from .yaml_file_reader import *
 from .data_store import *
 from .tiingo_api import *
 from .iex_api import *
@@ -19,6 +19,7 @@ LOGDIR = '{}/logs'.format(sys.path[0])
 YF_POSITIONS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/positions.csv'
 INDEX_TRACKERS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/index_trackers.yml'
 WATCHLIST_STOCKS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/watchlist.yml'
+STOCK_CATEGORIES_FILE = '/Users/rakesh/Developer/investment_stats/inputs/categories.yml'
 
 # Outputs/Storage
 STOCK_DATA_DIR = '/Users/rakesh/Developer/investment_stats/data'
@@ -32,6 +33,7 @@ class StockDataManager:
     def __init__(self):
         self._setup_logger()
         self.all_symbols = []
+        self.stock_categories = {}
         self.index_tracker_stocks = []
         self.watchlist_stocks = []
         self.position_stocks = []
@@ -85,6 +87,9 @@ class StockDataManager:
     def get_positions(self) -> List[Position]:
         return self.positions
 
+    def get_stock_categories(self) -> Dict[str, str]:
+        return self.stock_categories
+
     def fetch_stock_data(self, symbols: List[str]) -> List[Stock]:
         stock_data = []
         # Initialize data store
@@ -116,13 +121,15 @@ class StockDataManager:
 
     def run(self):
 
-        # Extract data from inputs
+        # Get positions data
         pos_reader = YFPositionsReader(file=YF_POSITIONS_FILE)
         positions = pos_reader.run()
-        sf_reader = StockFileReader(file=INDEX_TRACKERS_FILE)
-        index_trackers = sf_reader.run()
-        sf_reader = StockFileReader(file=WATCHLIST_STOCKS_FILE)
-        watchlist = sf_reader.run()
+
+        # Get data from other stock files
+        yfr = YamlFileReader()
+        index_trackers = yfr.read_stocks_file(file=INDEX_TRACKERS_FILE)
+        watchlist = yfr.read_stocks_file(file=WATCHLIST_STOCKS_FILE)
+        self.stock_categories = yfr.read_category_file(file=STOCK_CATEGORIES_FILE)
 
         self.positions = positions
         position_symbols = self._extract_symbols(positions=positions)

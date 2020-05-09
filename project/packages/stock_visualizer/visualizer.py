@@ -3,6 +3,10 @@ import os
 import logging
 import logging.handlers
 
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+
 from data_types import *
 from stock_data_manager import *
 
@@ -34,4 +38,3 @@ class StockVisualizer():
 
     def run(self):
         self.sdm.run()
-        
