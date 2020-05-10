@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'package
 from typing import List, Dict
 from packages import data_types
 from packages import stock_data_manager
-from packages import app_data_generator
+from packages import stock_data_consumer
 
 from datetime import datetime, timedelta
 from dash.dependencies import Input, Output, State, ClientsideFunction
@@ -16,24 +16,24 @@ import dash_html_components as html
 
 sdm = stock_data_manager.StockDataManager()
 sdm._testing = True
-adg = app_data_generator.AppDataGenerator(all_symbols=[], stock_categories={}, index_tracker_stocks=[], 
+sdc = stock_data_consumer.StockDataConsumer(all_symbols=[], stock_categories={}, index_tracker_stocks=[], 
                                             watchlist_stocks=[], position_stocks=[], positions=[])
 
-def refresh_data() -> app_data_generator.AppDataGenerator:
+def refresh_data() -> stock_data_consumer.StockDataConsumer:
     sdm.run()
-    adg = app_data_generator.AppDataGenerator(all_symbols=sdm.all_symbols, stock_categories=sdm.stock_categories, 
+    sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols, stock_categories=sdm.stock_categories, 
                                             index_tracker_stocks=sdm.index_tracker_stocks, watchlist_stocks=sdm.watchlist_stocks,
                                             position_stocks=sdm.position_stocks, positions=sdm.positions)
-    return adg
+    return sdc
 
-adg = refresh_data()
+sdc = refresh_data()
 
-print('Invested Amount: {}'.format(adg.calculate_invested_amount()))
-print('Market Value: {}'.format(adg.calculate_market_value()))
-print('Unrealized Gain: {}'.format(adg.calculate_unrealized_gain()))
-print('Realized Gain: {}'.format(adg.realized_gain()))
-print('Values for Stock: {}'.format(adg.values_for_stock(symbol='ARKK', start_date=datetime.fromisoformat('2015-01-01').astimezone(), end_date=datetime.now().astimezone())))
-print('Percent Gain DateFrame: {}'.format(adg.pct_gain_for_stock(symbol='ARKK', start_date=datetime.fromisoformat('2015-01-01').astimezone(), end_date=datetime.now().astimezone())))
+print('Invested Amount: {}'.format(sdc.calculate_invested_amount()))
+print('Market Value: {}'.format(sdc.calculate_market_value()))
+print('Unrealized Gain: {}'.format(sdc.calculate_unrealized_gain()))
+print('Realized Gain: {}'.format(sdc.realized_gain()))
+print('Values for Stock: {}'.format(sdc.values_for_stock(symbol='ARKK', start_date=datetime.fromisoformat('2015-01-01').astimezone(), end_date=datetime.now().astimezone())))
+print('Percent Gain DateFrame: {}'.format(sdc.pct_gain_for_stock(symbol='ARKK', start_date=datetime.fromisoformat('2015-01-01').astimezone(), end_date=datetime.now().astimezone())))
 
 app = dash.Dash(
     __name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}]
@@ -241,4 +241,5 @@ def update_text(data):
     return symbols[0] + " mcf", symbols[1] + " bbl", str(result) + " bbl"
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    # app.run_server(debug=True)
+    exit()

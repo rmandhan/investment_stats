@@ -6,7 +6,7 @@ from data_types import *
 
 # TODO: Add caching
 
-class AppDataGenerator():
+class StockDataConsumer():
 
     def __init__(self, all_symbols: List[str], stock_categories: Dict[str, str], index_tracker_stocks: List[Stock], 
                  watchlist_stocks: List[Stock], position_stocks: List[Stock], positions: List[Position]):
@@ -74,7 +74,7 @@ class AppDataGenerator():
                 df = df[(df[Quote._date_key] >= start_date) & (df[Quote._date_key] <= end_date)]
         return df
         
-    def pct_gain_for_stock(self, symbol: str, start_date: datetime, end_date: datetime):
+    def pct_gain_for_stock(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
         df = pd.DataFrame()
         stocks = self.position_stocks+self.watchlist_stocks+self.index_tracker_stocks
         for s in stocks:
@@ -84,4 +84,3 @@ class AppDataGenerator():
                 x0 = df.iloc[0][Quote._close_key]
                 df['pct_gain'] = df[Quote._close_key].apply(lambda x: ((x-x0)/x0)*100)
         return df
-        
