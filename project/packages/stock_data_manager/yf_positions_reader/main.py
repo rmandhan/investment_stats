@@ -24,11 +24,7 @@ class YFPositionsReader():
                 csv_rows.append(row)
             if len(csv_rows) < 1:
                 self.logger.warn('CSV File Empty')
-            elif len(csv_rows) < 2:
-                self.logger.warn('No positions found')
-            else:
-                csv_rows = csv_rows[1:len(csv_rows)-1]
-                self.logger.info('{} trades found in positions file'.format(len(csv_rows)))
+            self.logger.info('{} trades found in positions file'.format(len(csv_rows)))
 
         return csv_rows
 
@@ -39,8 +35,8 @@ class YFPositionsReader():
 
         for row in csv_rows:
             symbol = row['Symbol']
-            quantity = row['Quantity']
-            purchase_price = row['Purchase Price']
+            quantity = float(row['Quantity'])
+            purchase_price = float(row['Purchase Price'])
             trade_date = row['Trade Date']
             # Convert date to datetime
             trade_date = datetime.strptime(trade_date, '%Y%m%d')

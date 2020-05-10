@@ -9,7 +9,7 @@ class Transaction():
     _quantity_key = 'quantity'
     _purchase_price_key = 'purchase_price'
 
-    def __init__(self, trade_date: datetime, quantity: int, purchase_price: float):
+    def __init__(self, trade_date: datetime, quantity: float, purchase_price: float):
         self.trade_date = trade_date
         self.quantity = quantity
         self.purchase_price = purchase_price

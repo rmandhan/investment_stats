@@ -2,7 +2,7 @@ import logging
 import time
 
 from typing import Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from iexfinance.stocks import Stock as IEXClient
 from data_types import *
 
@@ -22,13 +22,13 @@ class IEXAPI():
             return line.strip()
 
     def _should_sync_metadata(self, date: datetime) -> bool:
-        threshold = datetime.now() - METADATA_THRESHOLD
+        threshold = datetime.now(timezone.utc).astimezone() - METADATA_THRESHOLD
         if date < threshold:
             return 1
         return 0
 
     def _should_sync_latest(self, date: datetime) -> bool:
-        threshold = datetime.now() - LATEST_THRESHOLD
+        threshold = datetime.now(timezone.utc).astimezone() - LATEST_THRESHOLD
         if date < threshold:
             return 1
         return 0
@@ -38,7 +38,7 @@ class IEXAPI():
             self.logger.info('Metadata already up to date')
             return metadata, 0
         self.logger.info('Updating metadata')
-        now = datetime.now()
+        now = datetime.now(timezone.utc).astimezone()
         iex = IEXClient(symbols=symbol, token=self.key)
         c = iex.get_company()
         metadata = StockMetaData(symbol=symbol, sync_date=now, company_name=c['companyName'], security_name=c['securityName'], exchange=c['exchange'], industry=c['industry'], issue_type=c['issueType'], sector=c['sector'])
@@ -50,7 +50,7 @@ class IEXAPI():
             self.logger.info('Latest stock data already up to date')
             return latest, 0
         self.logger.info('Updating latest stock data')
-        now = datetime.now()
+        now = datetime.now(timezone.utc).astimezone()
         iex = IEXClient(symbols=symbol, token=self.key)
         q = iex.get_quote()
         # Sometimes latest quote information isn't available depending on the time you query
@@ -58,7 +58,7 @@ class IEXAPI():
             self.logger.info('Latest stock data currently unavailable')
             latest.sync_date = now
             return latest, 1
-        date = datetime.fromtimestamp(q['latestUpdate']/1000)
+        date = datetime.fromtimestamp(q['latestUpdate']/1000).astimezone(timezone.utc).isoformat()
         quote = Quote(date=date, high=q['high'], low=q['low'], open=q['open'], close=q['close'], volume=q['volume'])
         latest = StockLatest(sync_date=now, quote=quote)
         self.logger.info('Successfully fetched latest stock data')

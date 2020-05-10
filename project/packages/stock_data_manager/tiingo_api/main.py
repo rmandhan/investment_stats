@@ -1,7 +1,7 @@
 import logging
 import tiingo
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from tiingo import TiingoClient
 from typing import Tuple
 from data_types import *
@@ -24,7 +24,7 @@ class TiingoAPI():
             return line.strip()
 
     def _should_sync_historical(self, date: datetime) -> bool:
-        if datetime.now().date() == date.date():
+        if datetime.now(timezone.utc).astimezone().date() == date.date():
             return 0
         return 1
 
@@ -42,7 +42,7 @@ class TiingoAPI():
             self.logger.info('Will fetch max(5 years, inception date) historical data')
 
         start_date = historical.latest_date + timedelta(days=1) if update_in_place else START_DATE
-        now = datetime.now()
+        now = datetime.now(timezone.utc).astimezone()
         tiingo = TiingoClient(config={'api_key': self.key})
         h_data = tiingo.get_ticker_price(ticker=symbol, startDate=start_date)
 
