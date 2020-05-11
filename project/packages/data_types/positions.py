@@ -15,7 +15,7 @@ class Transaction():
         self.purchase_price = purchase_price
 
     def __str__(self):
-        return 'Trade Date: {}, Quantity: {:<5s}, Purchase Price: {:<7s}'.format(self.trade_date, self.quantity, self.purchase_price)
+        return 'Trade Date: {}, Quantity: {:<5f}, Purchase Price: {:<7f}'.format(self.trade_date, self.quantity, self.purchase_price)
 
 class Position():
 

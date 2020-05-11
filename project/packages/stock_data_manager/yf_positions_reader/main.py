@@ -3,7 +3,7 @@ import csv
 import logging
 
 from typing import List
-from datetime import datetime
+from datetime import date, datetime, timezone
 from data_types import *
 
 class YFPositionsReader():
@@ -40,8 +40,9 @@ class YFPositionsReader():
             trade_date = row['Trade Date']
             # Convert date to datetime
             trade_date = datetime.strptime(trade_date, '%Y%m%d')
+            trade_datetime = datetime(year=trade_date.year, month=trade_date.month, day=trade_date.day, hour=0, minute=0, second=0, tzinfo=timezone.utc)
             # Create a transaction
-            trans = Transaction(trade_date=trade_date, quantity=quantity, purchase_price=purchase_price)
+            trans = Transaction(trade_date=trade_datetime, quantity=quantity, purchase_price=purchase_price)
             if symbol in symbol_transactions:
                 transactions = symbol_transactions[symbol]
                 transactions.append(trans)
