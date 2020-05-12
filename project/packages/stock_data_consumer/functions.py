@@ -71,6 +71,10 @@ class StockDataConsumer():
         self.portfolio_start_date = portfolio_start_date
         self.portfolio_market_days = portfolio_market_days
 
+    def _print_df(self, df: pd.DataFrame):
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(df)
+
     def portfolio_invested_amount_over_time(self):
         final_df = pd.DataFrame()
         invested_amount = []
@@ -115,73 +119,73 @@ class StockDataConsumer():
         final_df = pd.DataFrame(data)
         return final_df
             
-    # def calculate_market_value(self) -> float:
-    #     result = 0
-    #     quantities = {}
-    #     for p in self.positions:
-    #         quantities[p.symbol] = 0
-    #         for t in p.transactions:
-    #             # Quantities should never add to a negative number
-    #             quantities[p.symbol] += t.quantity
-    #     for ps in self.position_stocks:
-    #         latest = ps.latest_quote
-    #         result += quantities[ps.symbol]*latest.close
-    #     return result
+    def calculate_market_value(self) -> float:
+        result = 0
+        quantities = {}
+        for p in self.positions:
+            quantities[p.symbol] = 0
+            for t in p.transactions:
+                # Quantities should never add to a negative number
+                quantities[p.symbol] += t.quantity
+        for ps in self.position_stocks:
+            latest = ps.latest_quote
+            result += quantities[ps.symbol]*latest.close
+        return result
     
-    # def calculate_invested_amount(self) -> float:
-    #     result = 0
-    #     for p in self.positions:
-    #         r_quantity = 0
-    #         r_average = 0
-    #         for t in p.transactions:
-    #             if t.quantity > 0:
-    #                 r_average = ((r_average*r_quantity)+(t.quantity*t.purchase_price))/(r_quantity+t.quantity)
-    #             r_quantity += t.quantity
-    #         result += r_quantity*r_average
-    #     return result
+    def calculate_invested_amount(self) -> float:
+        result = 0
+        for p in self.positions:
+            r_quantity = 0
+            r_average = 0
+            for t in p.transactions:
+                if t.quantity > 0:
+                    r_average = ((r_average*r_quantity)+(t.quantity*t.purchase_price))/(r_quantity+t.quantity)
+                r_quantity += t.quantity
+            result += r_quantity*r_average
+        return result
 
-    # def calculate_unrealized_gain(self) -> (float, float):
-    #     gain, pct = 0, 0
-    #     inv_amount = self.calculate_invested_amount()
-    #     if inv_amount is 0: return gain, pct
-    #     mkt_value = self.calculate_market_value()
-    #     gain = mkt_value-inv_amount
-    #     pct = ((mkt_value-inv_amount)/inv_amount)*100
-    #     return gain, pct
+    def calculate_unrealized_gain(self) -> (float, float):
+        gain, pct = 0, 0
+        inv_amount = self.calculate_invested_amount()
+        if inv_amount is 0: return gain, pct
+        mkt_value = self.calculate_market_value()
+        gain = mkt_value-inv_amount
+        pct = ((mkt_value-inv_amount)/inv_amount)*100
+        return gain, pct
 
-    # def realized_gain(self) -> (float, float):
-    #     gain, pct = 0, 0
-    #     for p in self.positions:
-    #         r_quantity = 0
-    #         r_average = 0
-    #         for t in p.transactions:
-    #             if t.quantity > 0:
-    #                 r_average = ((r_average*r_quantity)+(t.quantity*t.purchase_price))/(r_quantity+t.quantity)
-    #             else:
-    #                 gain += (t.purchase_price-r_average)*t.quantity*-1
-    #             r_quantity += t.quantity
-    #     pct = (gain/self.calculate_invested_amount())*100
-    #     return gain, pct
+    def realized_gain(self) -> (float, float):
+        gain, pct = 0, 0
+        for p in self.positions:
+            r_quantity = 0
+            r_average = 0
+            for t in p.transactions:
+                if t.quantity > 0:
+                    r_average = ((r_average*r_quantity)+(t.quantity*t.purchase_price))/(r_quantity+t.quantity)
+                else:
+                    gain += (t.purchase_price-r_average)*t.quantity*-1
+                r_quantity += t.quantity
+        pct = (gain/self.calculate_invested_amount())*100
+        return gain, pct
     
-    # def values_for_stock(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
-    #     df = pd.DataFrame()
-    #     stocks = self.position_stocks+self.watchlist_stocks+self.index_tracker_stocks
-    #     for s in stocks:
-    #         if s.symbol == symbol:
-    #             df = s.df()
-    #             df = df[(df[Quote._date_key] >= start_date) & (df[Quote._date_key] <= end_date)]
-    #     return df
+    def values_for_stock(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+        df = pd.DataFrame()
+        stocks = self.position_stocks+self.watchlist_stocks+self.index_tracker_stocks
+        for s in stocks:
+            if s.symbol == symbol:
+                df = s.df()
+                df = df[(df[Quote._date_key] >= start_date) & (df[Quote._date_key] <= end_date)]
+        return df
         
-    # def pct_gain_for_stock(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
-    #     df = pd.DataFrame()
-    #     stocks = self.position_stocks+self.watchlist_stocks+self.index_tracker_stocks
-    #     for s in stocks:
-    #         if s.symbol == symbol:
-    #             df = s.df()
-    #             df = df[(df[Quote._date_key] >= start_date) & (df[Quote._date_key] <= end_date)]
-    #             x0 = df.iloc[0][Quote._close_key]
-    #             df['pct_gain'] = df[Quote._close_key].apply(lambda x: ((x-x0)/x0)*100)
-    #     return df
+    def pct_gain_for_stock(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+        df = pd.DataFrame()
+        stocks = self.position_stocks+self.watchlist_stocks+self.index_tracker_stocks
+        for s in stocks:
+            if s.symbol == symbol:
+                df = s.df()
+                df = df[(df[Quote._date_key] >= start_date) & (df[Quote._date_key] <= end_date)]
+                x0 = df.iloc[0][Quote._close_key]
+                df['pct_gain'] = df[Quote._close_key].apply(lambda x: ((x-x0)/x0)*100)
+        return df
 
     # def portfolio_invested_amount(self) -> pd.DataFrame:
     #     final_df = pd.DataFrame()

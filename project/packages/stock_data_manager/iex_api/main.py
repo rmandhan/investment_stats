@@ -45,6 +45,7 @@ class IEXAPI():
         self.logger.info('Successfully fetched latest metadata')
         return metadata, 1
     
+    # Not a reliable endpoint for free users
     def update_latest(self, symbol: str, latest: StockLatest) -> Tuple[StockLatest, bool]:
         if latest is not None and not self._should_sync_latest(date=latest.sync_date):
             self.logger.info('Latest stock data already up to date')

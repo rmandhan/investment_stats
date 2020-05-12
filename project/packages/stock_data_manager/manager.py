@@ -11,6 +11,7 @@ from .yaml_file_reader import *
 from .data_store import *
 from .tiingo_api import *
 from .iex_api import *
+from .finnhub_api import *
 
 LOGLEVEL = logging.DEBUG
 LOGDIR = '{}/logs'.format(sys.path[0])
@@ -27,6 +28,7 @@ STOCK_DATA_DIR = '/Users/rakesh/Developer/investment_stats/data'
 # API Keys
 TIINGO_API_KEY = '/Users/rakesh/Developer/investment_stats/api_keys/tiingo'
 IEX_API_KEY = '/Users/rakesh/Developer/investment_stats/api_keys/iex'
+FINNHUB_API_KEY = '/Users/rakesh/Developer/investment_stats/api_keys/finnhub'
 
 class StockDataManager:
 
@@ -102,12 +104,15 @@ class StockDataManager:
             latest = ds.read_stock_latest(symbol=symbol)
             historical = ds.read_stock_historical(symbol=symbol)
             if not self._testing:
-                # Fetch/update metadata and latest quote for all symbols using IEX API
+                # Fetch/update metadata for all symbols using IEX API
                 iex = IEXAPI(api_key_path=IEX_API_KEY)
                 metadata, updated = iex.update_metadata(symbol=symbol, metadata=metadata)
-                latest, updated = iex.update_latest(symbol=symbol, latest=latest)
                 # Update local storage
                 if updated: ds.write_stock_metadata(symbol=symbol, metadata=metadata)
+                # Fetch/update latest quote data for all symbols using Finhub API
+                finnhub = FinnhubAPI(api_key_path=FINNHUB_API_KEY)
+                latest, updated = finnhub.update_latest(symbol=symbol, latest=latest)
+                # Update local storage
                 if updated: ds.write_stock_latest(symbol=symbol, latest=latest)
                 # Fetch/update historical data for all symbols using Tiingo API
                 tiingo = TiingoAPI(api_key_path=TIINGO_API_KEY)

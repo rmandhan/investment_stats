@@ -38,7 +38,7 @@ class Quote():
         self.low = low
         self.open = open
         self.close = close
-        self.volume = volume
+        self.volume = volume # Volume may be 0 for latest quotes
 
     def __str__(self):
         return 'Date: {}, High: {:<6f}, Low: {:<6f}, Open: {:<6f}, Close: {:<6f}, Volume: {}'.format(self.date, self.high, self.low, self.open, self.close, self.volume)
