@@ -62,9 +62,12 @@ class StockDataConsumer():
             if s.day_quotes[0].date < portfolio_start_date:
                 stock_to_use = s
                 break
+        # Add all historical quote dates
         for q in stock_to_use.day_quotes:
             if q.date >= portfolio_start_date:
                 portfolio_market_days.append(q.date)
+        # Also add date from the latest stock data
+        portfolio_market_days.append(stock_to_use.latest_quote.date)
         # Update class variables
         self.stock_df_map = stock_df_map
         self.positions_df = positions_df
@@ -119,6 +122,49 @@ class StockDataConsumer():
         final_df = pd.DataFrame(data)
         return final_df
             
+    def portfolio_market_value_over_time(self):
+        final_df = pd.DataFrame()
+        market_values = []
+        stock_r_quantity = {}
+        index = 0
+        day_index = 0
+        num_days = len(self.portfolio_market_days)
+        market_days = self.portfolio_market_days
+        total_trades = self.positions_df.shape[0]
+        # Iterate over market days and keep track of stock quantity & average cost ever day
+        for day in market_days:
+            market_values.append(0)
+            new_trades_found = False
+            while index < total_trades:
+                trade = self.positions_df.iloc[index]
+                trade_date = trade[TRADE_TRADE_KEY]
+                if trade_date > day:
+                    break
+                trade_symbol = trade[SYMBOL_KEY]
+                trade_quantity = trade[QUANTITY_KEY]
+                if trade_symbol not in stock_r_quantity:
+                    # Initialize dictionary
+                    stock_r_quantity[trade_symbol] = 0
+                r_quantity = stock_r_quantity[trade_symbol]
+                r_quantity += trade_quantity
+                stock_r_quantity[trade_symbol] += trade_quantity
+                new_trades_found = True
+                index += 1
+            # Calculate the investment amount for that day
+            for symbol in stock_r_quantity.keys():
+                stock_df = self.stock_df_map[symbol]
+                # Get closing price of stock on this day
+                df_index = stock_df.shape[0]-num_days+day_index
+                close_price = stock_df.iloc[df_index][CLOSE_KEY]
+                market_values[len(market_values)-1] += stock_r_quantity[symbol]*close_price
+                # print('Symbol: {} Quantity: {}, Date: {}, Price: {}'.format(symbol, stock_r_quantity[symbol], stock_df.iloc[df_index][DATE_KEY].to_pydatetime(), close_price))
+            day_index += 1
+        # Create final data frame
+        data = { DATE_KEY: market_days, 
+                 VALUE_KEY: market_values }
+        final_df = pd.DataFrame(data)
+        return final_df
+
     def calculate_market_value(self) -> float:
         result = 0
         quantities = {}
@@ -186,80 +232,4 @@ class StockDataConsumer():
                 x0 = df.iloc[0][Quote._close_key]
                 df['pct_gain'] = df[Quote._close_key].apply(lambda x: ((x-x0)/x0)*100)
         return df
-
-    # def portfolio_invested_amount(self) -> pd.DataFrame:
-    #     final_df = pd.DataFrame()
-    #     time_array = []
-    #     value_array = []
-    #     tmp_dfs = []
-    #     for p in self.positions:
-    #         tmp_dfs.append(p.df())
-    #     pos_df = pd.concat(tmp_dfs, ignore_index=True)
-    #     # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    #         # print(pos_df)
-    #     pos_df.sort_values(by=[Transaction._trade_date_key], inplace=True)
-    #     # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    #     #     print(pos_df)
-    #     earliest_date = pytz.utc.localize(pos_df.iloc[0][Transaction._trade_date_key])
-    #     # print(earliest_date)
-    #     iter_quotes = self.position_stocks[0].day_quotes
-    #     # for q in iter_quotes:
-    #     #     print(q.date)
-    #     i = len(iter_quotes)-1
-    #     while i >= 0:
-    #         if iter_quotes[i].date == earliest_date:
-    #             break
-    #         i -= 1
-    #     running_index = 0
-    #     total_trades = pos_df.shape[0]
-    #     cumulative_invested = 0
-    #     r_quantity_dict = {}
-    #     r_average_dict = {}
-    #     for x in range(i, len(iter_quotes)):
-    #         # print(iter_quotes[x].date)
-    #         time_array.append(iter_quotes[x].date)
-    #         pos_date = pytz.utc.localize(pos_df.iloc[running_index][Transaction._trade_date_key])
-    #         print(pos_date)
-    #         print(iter_quotes[x].date)
-    #         if pos_date >= iter_quotes[x].date:
-    #             while running_index < total_trades:
-    #                 pos_date = pytz.utc.localize(pos_df.iloc[running_index][Transaction._trade_date_key])
-    #                 if pos_date > iter_quotes[x].date:
-    #                     break
-    #                 quantity = pos_df.iloc[running_index][Transaction._quantity_key]
-    #                 purchase_price = pos_df.iloc[running_index][Transaction._purchase_price_key]
-    #                 symbol = pos_df.iloc[running_index][Position._symbol_key]
-    #                 r_quantity = 0
-    #                 r_average = 0
-    #                 if symbol in r_quantity_dict:
-    #                     r_quantity = r_quantity_dict[symbol]
-    #                 if symbol in r_average_dict:
-    #                     r_average = r_average_dict[symbol] 
-    #                 if quantity > 0:
-    #                     r_average = ((r_average*r_quantity)+(quantity*purchase_price))/(r_quantity+quantity)
-    #                 r_quantity += quantity
-    #                 cumulative_invested += r_quantity*r_average
-    #                 r_quantity_dict[symbol] = r_quantity
-    #                 r_average_dict[symbol] = r_average
-    #                 running_index += 1
-    #         value_array.append(cumulative_invested)
-    #         print(cumulative_invested)
-    #     return final_df
-
-    # def portfolio_market_value(self) -> pd.DataFrame:
-    #     final_df = pd.DataFrame()
-    #     return final_df
-
-    # def portfolio_unrealized_gains(self) -> pd.DataFrame:
-    #     final_df = pd.DataFrame()
-    #     return final_df
-
-    # def portfolio_realized_gains(self) -> pd.DataFrame:
-    #     final_df = pd.DataFrame()
-    #     return final_df
-
-    # def portfolio_total_gains(self) -> pd.DataFrame:
-    #     final_df = pd.DataFrame()
-    #     return final_df
-
     

@@ -12,7 +12,7 @@ from packages import stock_data_consumer
 from datetime import datetime, timedelta
 
 sdm = stock_data_manager.StockDataManager()
-sdm._testing = True
+# sdm._testing = True
 sdc = stock_data_consumer.StockDataConsumer(all_symbols=[], stock_categories={}, index_tracker_stocks=[], 
                                             watchlist_stocks=[], position_stocks=[], positions=[])
 
@@ -33,8 +33,6 @@ sdc = refresh_data()
 # print(sdc.portfolio_start_date)
 # print('------- MARKET DAYS -------')
 # print(sdc.portfolio_market_days)
-# print('------- PORTFOLIO INVESTED AMOUNT OVER TIME -------')
-# print(sdc.portfolio_invested_amount_over_time())
 
 # start_date = datetime.fromisoformat('2015-01-01').astimezone()
 # end_date = datetime.now().astimezone()
@@ -45,3 +43,8 @@ sdc = refresh_data()
 # print('Realized Gain: {}'.format(sdc.realized_gain()))
 # print('Values for Stock: {}'.format(sdc.values_for_stock(symbol='ARKK', start_date=start_date, end_date=end_date)))
 # print('Percent Gain DateFrame: {}'.format(sdc.pct_gain_for_stock(symbol='ARKK', start_date=start_date, end_date=end_date)))
+
+print('------- PORTFOLIO INVESTED AMOUNT OVER TIME -------')
+print(sdc.portfolio_invested_amount_over_time())
+print('------- PORTFOLIO MARKET VALUE AMOUNT OVER TIME -------')
+print(sdc.portfolio_market_value_over_time())
