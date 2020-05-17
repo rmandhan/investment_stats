@@ -17,18 +17,18 @@ LOGLEVEL = logging.DEBUG
 LOGDIR = '{}/logs'.format(sys.path[0])
 
 # Inputs
-YF_POSITIONS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/positions.csv'
-INDEX_TRACKERS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/index_trackers.yml'
-WATCHLIST_STOCKS_FILE = '/Users/rakesh/Developer/investment_stats/inputs/watchlist.yml'
-STOCK_CATEGORIES_FILE = '/Users/rakesh/Developer/investment_stats/inputs/categories.yml'
+YF_POSITIONS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/positions.csv'
+INDEX_TRACKERS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/index_trackers.yml'
+WATCHLIST_STOCKS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/watchlist.yml'
+STOCK_CATEGORIES_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/categories.yml'
 
 # Outputs/Storage
-STOCK_DATA_DIR = '/Users/rakesh/Developer/investment_stats/data'
+STOCK_DATA_DIR = '/Users/rakesh/Developer/portfolio_stats/data'
 
 # API Keys
-TIINGO_API_KEY = '/Users/rakesh/Developer/investment_stats/api_keys/tiingo'
-IEX_API_KEY = '/Users/rakesh/Developer/investment_stats/api_keys/iex'
-FINNHUB_API_KEY = '/Users/rakesh/Developer/investment_stats/api_keys/finnhub'
+TIINGO_API_KEY = '/Users/rakesh/Developer/portfolio_stats/api_keys/tiingo'
+IEX_API_KEY = '/Users/rakesh/Developer/portfolio_stats/api_keys/iex'
+FINNHUB_API_KEY = '/Users/rakesh/Developer/portfolio_stats/api_keys/finnhub'
 
 class StockDataManager:
 
