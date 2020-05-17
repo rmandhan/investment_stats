@@ -137,7 +137,7 @@ class StockDataConsumer():
                     average_cost_d = ((average_cost_d*quantity_d)+(quantity*purchase_price))/(quantity_d+quantity)
                 else:
                     # Average cost doesn't change, but add to realized gains when a sell
-                    realized_gain_d += (purchase_price-average_cost_d)*quantity
+                    realized_gain_d += (purchase_price-average_cost_d)*quantity*-1
                 # Update today's quantity
                 quantity_d += quantity
                 transactions_processed_count += 1
