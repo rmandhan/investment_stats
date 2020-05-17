@@ -40,7 +40,7 @@ class StockDataManager:
         self.stock_categories = {}
         self.index_tracker_stocks = []
         self.watchlist_stocks = []
-        self.position_stocks = []
+        self.portfolio_stocks = []
         self.positions = []
 
     def _setup_logger(self):
@@ -85,8 +85,8 @@ class StockDataManager:
     def get_watchlist_stocks(self) -> List[Stock]:
         return self.watchlist_stocks
 
-    def get_position_stocks(self) -> List[Stock]:
-        return self.position_stocks
+    def get_portfolio_stocks(self) -> List[Stock]:
+        return self.portfolio_stocks
     
     def get_positions(self) -> List[Position]:
         return self.positions
@@ -155,7 +155,7 @@ class StockDataManager:
             if stock.symbol in watchlist:
                 self.watchlist_stocks.append(stock)
             if stock.symbol in position_symbols:
-                self.position_stocks.append(stock)
+                self.portfolio_stocks.append(stock)
 
         self.logger.info('Finished processing for {} symbols'.format(len(self.all_symbols)))
         

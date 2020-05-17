@@ -1,50 +1,30 @@
 import sys
 import os
-import dash
+
+from typing import List, Dict
+from datetime import datetime, timedelta
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'packages')))
 
-from typing import List, Dict
 from packages import data_types
 from packages import stock_data_manager
 from packages import stock_data_consumer
 
-from datetime import datetime, timedelta
-
 sdm = stock_data_manager.StockDataManager()
-# sdm._testing = True
-sdc = stock_data_consumer.StockDataConsumer(all_symbols=[], stock_categories={}, index_tracker_stocks=[], 
-                                            watchlist_stocks=[], position_stocks=[], positions=[])
+sdm._testing = True
+sdm.run()
 
-def refresh_data() -> stock_data_consumer.StockDataConsumer:
-    sdm.run()
-    sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols, stock_categories=sdm.stock_categories, 
-                                            index_tracker_stocks=sdm.index_tracker_stocks, watchlist_stocks=sdm.watchlist_stocks,
-                                            position_stocks=sdm.position_stocks, positions=sdm.positions)
-    return sdc
+sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols, stock_categories=sdm.stock_categories, 
+                                        index_tracker_stocks=sdm.index_tracker_stocks, watchlist_stocks=sdm.watchlist_stocks,
+                                        portfolio_stocks=sdm.portfolio_stocks, positions=sdm.positions)
+sdc.run()
 
-sdc = refresh_data()
+portfolio_stock_stats = sdc.get_portfolio_stock_stats()
+portfolio_aggregated_stats = sdc.get_portfolio_aggregate_stats()
 
-# print('------- STOCK DF MAP -------')
-# print(sdc.stock_df_map)
-# print('------- POSITIONS DF -------')
-# print(sdc.positions_df)
-# print('------- PORTFOLIO START DATE -------')
-# print(sdc.portfolio_start_date)
-# print('------- MARKET DAYS -------')
-# print(sdc.portfolio_market_days)
+for k,v in portfolio_stock_stats.items():
+    print('-------- PORTFOLIO STATS FOR {} --------'.format(k))
+    print(sdc._print_df(v))
 
-# start_date = datetime.fromisoformat('2015-01-01').astimezone()
-# end_date = datetime.now().astimezone()
-
-# print('Invested Amount: {}'.format(sdc.calculate_invested_amount()))
-# print('Market Value: {}'.format(sdc.calculate_market_value()))
-# print('Unrealized Gain: {}'.format(sdc.calculate_unrealized_gain()))
-# print('Realized Gain: {}'.format(sdc.realized_gain()))
-# print('Values for Stock: {}'.format(sdc.values_for_stock(symbol='ARKK', start_date=start_date, end_date=end_date)))
-# print('Percent Gain DateFrame: {}'.format(sdc.pct_gain_for_stock(symbol='ARKK', start_date=start_date, end_date=end_date)))
-
-print('------- PORTFOLIO INVESTED AMOUNT OVER TIME -------')
-print(sdc.portfolio_invested_amount_over_time())
-print('------- PORTFOLIO MARKET VALUE AMOUNT OVER TIME -------')
-print(sdc.portfolio_market_value_over_time())
+print('-------- AGGREGATED PORTFOLIO STATS --------')
+print(sdc._print_df(portfolio_aggregated_stats))

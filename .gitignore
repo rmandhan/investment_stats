@@ -13,6 +13,6 @@ notebooks/*
 
 # Sensitive Inputs
 api_keys/*
-inputs/positions.csv
+inputs/positions*
 # Data Store
 data/*
