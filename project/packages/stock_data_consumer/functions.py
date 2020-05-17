@@ -8,6 +8,8 @@ from data_types import *
 MIN_DATETIME = datetime(year=1, month=1, day=1, tzinfo=timezone.utc)
 MAX_DATETIME = datetime(year=9999, month=12, day=31, tzinfo=timezone.utc)
 
+ROUNDING_DECIMAL_PLACES = 2
+
 # Pre-defined Data Keys
 SYMBOL_KEY = Stock._symbol_key
 COMPANY_NAME_KEY = Stock._company_name_key
@@ -29,6 +31,8 @@ UNREALIZED_GAIN_KEY = 'unrealized_gain'
 UNREALIZED_PCT_GAIN_KEY = 'unrealized_pct_gain'
 REALIZED_GAIN_KEY = 'realized_gain'
 REALIZED_PCT_GAIN_KEY = 'realized_pct_gain'
+TOTAL_GAIN_KEY = 'total_gain'
+TOTAL_PCT_GAIN_KEY = 'total_pct_gain'
 AVERAGE_COST_KEY = 'average_cost'
 
 class StockDataConsumer():
@@ -97,6 +101,13 @@ class StockDataConsumer():
         realized_pct_gain_a = []
         quantity_a = []
         average_cost_a = []
+        total_gain_a = []
+        total_pct_gain_a = []
+        high_price_a = []
+        low_price_a = []
+        open_price_a = []
+        close_price_a = []
+        volume_a = []
         # Get stock and it's transactions
         stock = self.stock_df_map[symbol]
         transactions = self.positions_df_map[symbol]
@@ -110,15 +121,18 @@ class StockDataConsumer():
             unrealized_gain_d = 0
             unrealized_pct_gain_d = 0
             realized_pct_gain_d = 0
+            total_pct_gain_d = 0
             # These values are cumulative
             if len(quantity_a) > 0:
                 invested_amount_d = invested_amount_a[len(invested_amount_a)-1] 
-                realized_gain_d = realized_gain_a[len(realized_gain_a)-1] 
+                realized_gain_d = realized_gain_a[len(realized_gain_a)-1]
+                total_gain_d = total_gain_a[len(total_gain_a)-1]
                 quantity_d = quantity_a[len(quantity_a)-1] 
                 average_cost_d = average_cost_a[len(average_cost_a)-1]
             else:
                 invested_amount_d = 0
                 realized_gain_d = 0
+                total_gain_d = 0
                 quantity_d = 0
                 average_cost_d = 0
             # Process any remaining transactions
@@ -141,16 +155,22 @@ class StockDataConsumer():
                 # Update today's quantity
                 quantity_d += quantity
                 transactions_processed_count += 1
-            # Calculate values based on transactions or previou day's values
+            # Get stock values for today
+            df_index = stock.shape[0]-num_dates+i    # Offset to get close price for this date
+            high_price = stock.iloc[df_index][HIGH_KEY]
+            low_price = stock.iloc[df_index][LOW_KEY]
+            open_price = stock.iloc[df_index][OPEN_KEY]
+            close_price = stock.iloc[df_index][CLOSE_KEY]
+            volume  = stock.iloc[df_index][VOLUME_KEY]
+            # Calculate values based on transactions or previous day's values
             invested_amount_d = quantity_d*average_cost_d
             if invested_amount_d > 0:
                 realized_pct_gain_d = (realized_gain_d/invested_amount_d)*100
-                # Get market value of stock today to calculate these stats
-                df_index = stock.shape[0]-num_dates+i    # Offset to get close price for this date
-                close_price = stock.iloc[df_index][CLOSE_KEY]
                 market_value_d = close_price*quantity_d
                 unrealized_gain_d = market_value_d-invested_amount_d
                 unrealized_pct_gain_d = (unrealized_gain_d/invested_amount_d)*100
+                total_gain_d = unrealized_gain_d+realized_gain_d
+                total_pct_gain_d = (total_gain_d/invested_amount_d)*100
             # Append final values to arrays
             invested_amount_a.append(invested_amount_d)
             market_value_a.append(market_value_d)
@@ -160,6 +180,13 @@ class StockDataConsumer():
             realized_pct_gain_a.append(realized_pct_gain_d)
             quantity_a.append(quantity_d)
             average_cost_a.append(average_cost_d)
+            total_gain_a.append(total_gain_d)
+            total_pct_gain_a.append(total_pct_gain_d)
+            high_price_a.append(high_price)
+            low_price_a.append(low_price)
+            open_price_a.append(open_price)
+            close_price_a.append(close_price)
+            volume_a.append(volume)
         # Create and return final df
         final_df[DATE_KEY] = dates_a
         final_df[INVESTED_AMOUNT_KEY] = invested_amount_a
@@ -168,9 +195,16 @@ class StockDataConsumer():
         final_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a
         final_df[REALIZED_GAIN_KEY] = realized_gain_a
         final_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a
+        final_df[TOTAL_GAIN_KEY] = total_gain_a
+        final_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a
         final_df[QUANTITY_KEY] = quantity_a
         final_df[AVERAGE_COST_KEY] = average_cost_a
-        return final_df
+        final_df[HIGH_KEY] = high_price_a
+        final_df[LOW_KEY] = low_price_a
+        final_df[OPEN_KEY] = open_price_a
+        final_df[CLOSE_KEY] = close_price_a
+        final_df[VOLUME_KEY] = volume_a
+        return final_df.round(ROUNDING_DECIMAL_PLACES)
     
     def _aggregate_portfolio_stock_stats(self) -> pd.DataFrame:
         final_df = pd.DataFrame()
@@ -182,6 +216,8 @@ class StockDataConsumer():
         unrealized_pct_gain_a = []
         realized_gain_a = []
         realized_pct_gain_a = []
+        total_gain_a = []
+        total_pct_gain_a = []
         # The values we need are calculated from these
         stock_dfs = self.get_portfolio_stock_stats()
         for i in range(0, len(dates_a)):
@@ -191,6 +227,8 @@ class StockDataConsumer():
             unrealized_pct_gain_d = 0
             realized_gain_d = 0
             realized_pct_gain_d = 0
+            total_gain_d = 0
+            total_pct_gain_d = 0
             # Sum up these values for all the stocks
             for symbol, df in stock_dfs.items():
                 values = df.iloc[i]
@@ -198,9 +236,11 @@ class StockDataConsumer():
                 market_value_d += values[MARKET_VALUE_KEY]
                 unrealized_gain_d += values[UNREALIZED_GAIN_KEY]
                 realized_gain_d += values[REALIZED_GAIN_KEY]
+                total_gain_d += values[TOTAL_GAIN_KEY]
             # Derive these values from the summed up values
             unrealized_pct_gain_d = (unrealized_gain_d/invested_amount_d)*100
             realized_pct_gain_d = (realized_gain_d/invested_amount_d)*100
+            total_pct_gain_d = (total_gain_d/invested_amount_d)*100
             # Append final values to arrays
             invested_amount_a.append(invested_amount_d)
             market_value_a.append(market_value_d)
@@ -208,6 +248,8 @@ class StockDataConsumer():
             unrealized_pct_gain_a.append(unrealized_pct_gain_d)
             realized_gain_a.append(realized_gain_d)
             realized_pct_gain_a.append(realized_pct_gain_d)
+            total_gain_a.append(total_gain_d)
+            total_pct_gain_a.append(total_pct_gain_d)
         # Create and return final df
         final_df[DATE_KEY] = dates_a
         final_df[INVESTED_AMOUNT_KEY] = invested_amount_a
@@ -216,13 +258,24 @@ class StockDataConsumer():
         final_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a
         final_df[REALIZED_GAIN_KEY] = realized_gain_a
         final_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a
-        return final_df
+        final_df[TOTAL_GAIN_KEY] = total_gain_a
+        final_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a
+        return final_df.round(ROUNDING_DECIMAL_PLACES)
     
     def _calculate_portfolio_composition_stats(self, date: datetime) -> pd.DataFrame:
         return pd.DataFrame()
 
     def get_portfolio_stock_stats(self) -> Dict[str, pd.DataFrame]:
         return self.portfolio_stock_stats
+
+    def get_portfolio_stock_stats_combined(self) -> pd.DataFrame:
+        final_df = pd.DataFrame
+        dfs = []
+        for symbol, df in self.portfolio_stock_stats.items():
+            df['symbol'] = symbol
+            dfs.append(df)
+        final_df = pd.concat(dfs)
+        return final_df
     
     def get_portfolio_aggregate_stats(self) -> pd.DataFrame:
         return self.portfolio_aggregate_stats
