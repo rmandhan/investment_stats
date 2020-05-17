@@ -1,8 +1,9 @@
 import pandas as pd
+import numpy as np
 import pytz
 
 from datetime import datetime, timezone
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from data_types import *
 
 MIN_DATETIME = datetime(year=1, month=1, day=1, tzinfo=timezone.utc)
@@ -34,6 +35,12 @@ REALIZED_PCT_GAIN_KEY = 'realized_pct_gain'
 TOTAL_GAIN_KEY = 'total_gain'
 TOTAL_PCT_GAIN_KEY = 'total_pct_gain'
 AVERAGE_COST_KEY = 'average_cost'
+CATEGORY_KEY = 'category'
+COMP_INVESTED_KEY = 'composition_invested'
+COMP_MARKET_KEY = 'composition_market'
+REL_UNREALIZED_GAIN_KEY = 'relative_unrealized_gain'
+REL_REALIZED_GAIN_KEY = 'relative_realized_gain'
+REL_TOTAL_GAIN_KEY = 'relative_total_gain'
 
 class StockDataConsumer():
 
@@ -45,9 +52,10 @@ class StockDataConsumer():
         self.portfolio_stocks = portfolio_stocks
         self.positions = positions
         # Outputs
-        self.portfolio_stock_stats = {}
+        self.portfolio_stock_stats = {} # Key = Symbol
         self.portfolio_aggregate_stats = pd.DataFrame()
-        self.portfolio_composition_stats = {}
+        self.portfolio_stock_composition_stats = {} # Key = Date
+        self.portfolio_category_composition_stats = {} # Key = Date
 
     def _derive_base_stock_data(self):
         stock_df_map = {}
@@ -262,26 +270,189 @@ class StockDataConsumer():
         final_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a
         return final_df.round(ROUNDING_DECIMAL_PLACES)
     
-    def _calculate_portfolio_composition_stats(self, date: datetime) -> pd.DataFrame:
-        return pd.DataFrame()
+    def _calculate_portfolio_composition_stats(self, index: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        stock_c_df = pd.DataFrame()
+        category_c_df = pd.DataFrame()
+        stock_stats = self.portfolio_stock_stats
+        aggregated_values = self.portfolio_aggregate_stats.iloc[index]
+        stock_categories = self.stock_categories
+        unique_categories = np.unique(list(stock_categories.values())+['Unknown'])
+        # stock_c_df is made up of these
+        symbol_a_s = []
+        category_a_s = []
+        composition_invested_a_s = []
+        composition_market_a_s = []
+        relative_realized_gain_a_s = []
+        relative_unrealized_gain_a_s = []
+        relative_total_gain_a_s = []
+        # these are copied over
+        invested_amount_a_s = []
+        realized_gain_a_s = []
+        realized_pct_gain_a_s = []
+        unrealized_gain_a_s = []
+        unrealized_pct_gain_a_s = []
+        total_gain_a_s = []
+        total_pct_gain_a_s = []
+        # category_c_df is derived from these dictionaries
+        composition_invested_a_c = {}
+        composition_market_a_c = {}
+        relative_realized_gains_a_c = {}
+        relative_unrealized_gain_a_c = {}
+        relative_total_gain_a_c = {}
+        invested_amount_a_c = {}
+        realized_gain_a_c = {}
+        unrealized_gain_a_c = {}
+        total_gain_a_c = {}
+        # category_c_df is made up of these
+        composition_invested_a_c_l = []
+        composition_market_a_c_l = []
+        relative_realized_gains_a_c_l = []
+        relative_unrealized_gain_a_c_l = []
+        relative_total_gain_a_c_l = []
+        invested_amount_a_c_l = []
+        realized_gain_a_c_l = []
+        unrealized_gain_a_c_l = []
+        total_gain_a_c_l = []
+        # Derived at the end
+        realized_pct_gain_a_s_l = []
+        unrealized_pct_gain_a_s_l = []
+        total_pct_gain_a_s_l = []
+        # Intialize category dictionaries
+        for cat in unique_categories:
+            composition_invested_a_c[cat] = 0
+            composition_market_a_c[cat] = 0
+            relative_realized_gains_a_c[cat] = 0
+            relative_unrealized_gain_a_c[cat] = 0
+            relative_total_gain_a_c[cat] = 0
+            invested_amount_a_c[cat] = 0
+            realized_gain_a_c[cat] = 0
+            unrealized_gain_a_c[cat] = 0
+            total_gain_a_c[cat] = 0
+        # Iterate over each stock
+        for symbol, stock in stock_stats.items():
+            stock_values = stock.iloc[index]
+            cat = stock_categories.get(symbol, 'Unknown')
+            # Calculate composition and relative values for stock_c_df
+            composition_invested = (stock_values[INVESTED_AMOUNT_KEY]/aggregated_values[INVESTED_AMOUNT_KEY])*100
+            composition_market = (stock_values[MARKET_VALUE_KEY]/aggregated_values[MARKET_VALUE_KEY])*100
+            a_gain = aggregated_values[REALIZED_GAIN_KEY]
+            relative_realized_gain = 0 if a_gain == 0 else (stock_values[REALIZED_GAIN_KEY]/a_gain)*100
+            a_gain = aggregated_values[UNREALIZED_GAIN_KEY]
+            relative_unrealized_gain = 0 if a_gain == 0 else (stock_values[UNREALIZED_GAIN_KEY]/a_gain)*100
+            a_gain = aggregated_values[TOTAL_GAIN_KEY]
+            realtive_total_gain = 0 if a_gain == 0 else (stock_values[TOTAL_GAIN_KEY]/a_gain)*100
+            # Append values for this symbol for stock_c_df
+            symbol_a_s.append(symbol)
+            category_a_s.append(cat)
+            composition_invested_a_s.append(composition_invested)
+            composition_market_a_s.append(composition_market)
+            relative_realized_gain_a_s.append(relative_realized_gain)
+            relative_unrealized_gain_a_s.append(relative_unrealized_gain)
+            relative_total_gain_a_s.append(realtive_total_gain)
+            invested_amount_a_s.append(stock_values[INVESTED_AMOUNT_KEY])
+            realized_gain_a_s.append(stock_values[REALIZED_GAIN_KEY])
+            realized_pct_gain_a_s.append(stock_values[REALIZED_PCT_GAIN_KEY])
+            unrealized_gain_a_s.append(stock_values[UNREALIZED_GAIN_KEY])
+            unrealized_pct_gain_a_s.append(stock_values[UNREALIZED_PCT_GAIN_KEY])
+            total_gain_a_s.append(stock_values[TOTAL_GAIN_KEY])
+            total_pct_gain_a_s.append(stock_values[TOTAL_PCT_GAIN_KEY])
+            # Update values for this category for category_c_df
+            composition_invested_a_c[cat] += composition_invested
+            composition_market_a_c[cat] += composition_market
+            relative_realized_gains_a_c[cat] += relative_realized_gain
+            relative_unrealized_gain_a_c[cat] += relative_unrealized_gain
+            relative_total_gain_a_c[cat] += realtive_total_gain
+            invested_amount_a_c[cat] += stock_values[INVESTED_AMOUNT_KEY]
+            realized_gain_a_c[cat] += stock_values[REALIZED_GAIN_KEY]
+            unrealized_gain_a_c[cat] += stock_values[UNREALIZED_GAIN_KEY]
+            total_gain_a_c[cat] += stock_values[TOTAL_GAIN_KEY]
+        # Create category_c_df
+        stock_c_df[SYMBOL_KEY] = symbol_a_s
+        stock_c_df[CATEGORY_KEY] = category_a_s
+        stock_c_df[COMP_INVESTED_KEY] = composition_invested_a_s
+        stock_c_df[COMP_MARKET_KEY] = composition_market_a_s
+        stock_c_df[REL_REALIZED_GAIN_KEY] = relative_realized_gain_a_s
+        stock_c_df[REL_UNREALIZED_GAIN_KEY] = relative_unrealized_gain_a_s
+        stock_c_df[REL_TOTAL_GAIN_KEY] = relative_total_gain_a_s
+        stock_c_df[INVESTED_AMOUNT_KEY] = invested_amount_a_s
+        stock_c_df[REALIZED_GAIN_KEY] = realized_gain_a_s
+        stock_c_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a_s
+        stock_c_df[UNREALIZED_GAIN_KEY] = unrealized_gain_a_s
+        stock_c_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a_s
+        stock_c_df[TOTAL_GAIN_KEY] = total_gain_a_s
+        stock_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_s
+        # Calculate remaining values and create category_c_df
+        # Build the final arrays
+        for cat in unique_categories:
+            composition_invested_a_c_l.append(composition_invested_a_c[cat])
+            composition_market_a_c_l.append(composition_market_a_c[cat])
+            relative_realized_gains_a_c_l.append(relative_realized_gains_a_c[cat])
+            relative_unrealized_gain_a_c_l.append(relative_unrealized_gain_a_c[cat])
+            relative_total_gain_a_c_l.append(relative_total_gain_a_c[cat])
+            invested_amount_a_c_l.append(invested_amount_a_c[cat])
+            realized_gain_a_c_l.append(realized_gain_a_c[cat])
+            unrealized_gain_a_c_l.append(unrealized_gain_a_c[cat])
+            total_gain_a_c_l.append(total_gain_a_c[cat])
+            # Derive percentages
+            inv_amount = invested_amount_a_c[cat]
+            if inv_amount > 0:
+                realized_pct_gain_c = (realized_gain_a_c[cat]/inv_amount)*100
+                unrealized_pct_gain_c = (unrealized_gain_a_c[cat]/inv_amount)*100
+                total_pct_gain_c = (total_gain_a_c[cat]/inv_amount)*100
+            else:
+                realized_pct_gain_c = 0
+                unrealized_pct_gain_c = 0
+                total_pct_gain_c = 0
+            realized_pct_gain_a_s_l.append(realized_pct_gain_c)
+            unrealized_pct_gain_a_s_l.append(unrealized_pct_gain_c)
+            total_pct_gain_a_s_l.append(total_pct_gain_c)
+        category_c_df[CATEGORY_KEY] = unique_categories
+        category_c_df[COMP_INVESTED_KEY] = composition_invested_a_c_l
+        category_c_df[COMP_MARKET_KEY] = composition_market_a_c_l
+        category_c_df[REL_REALIZED_GAIN_KEY] = relative_realized_gains_a_c_l
+        category_c_df[REL_UNREALIZED_GAIN_KEY] = relative_unrealized_gain_a_c_l
+        category_c_df[REL_TOTAL_GAIN_KEY] = relative_total_gain_a_c_l
+        category_c_df[INVESTED_AMOUNT_KEY] = invested_amount_a_c_l
+        category_c_df[REALIZED_GAIN_KEY] = realized_gain_a_c_l
+        category_c_df[UNREALIZED_GAIN_KEY] = unrealized_gain_a_c_l
+        category_c_df[TOTAL_GAIN_KEY] = total_gain_a_c_l
+        category_c_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a_s_l
+        category_c_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a_s_l
+        category_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_s_l
+        return stock_c_df.round(ROUNDING_DECIMAL_PLACES), category_c_df.round(ROUNDING_DECIMAL_PLACES)
 
-    def get_portfolio_stock_stats(self) -> Dict[str, pd.DataFrame]:
-        return self.portfolio_stock_stats
-
-    def get_portfolio_stock_stats_combined(self) -> pd.DataFrame:
-        final_df = pd.DataFrame
-        dfs = []
-        for symbol, df in self.portfolio_stock_stats.items():
-            df['symbol'] = symbol
-            dfs.append(df)
-        final_df = pd.concat(dfs)
+    def get_portfolio_stock_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
+        final_df = self.portfolio_stock_stats
+        if combined:
+            dfs = []
+            for symbol, df in self.portfolio_stock_stats.items():
+                df['symbol'] = symbol
+                dfs.append(df)
+            final_df = pd.concat(dfs)
         return final_df
     
     def get_portfolio_aggregate_stats(self) -> pd.DataFrame:
         return self.portfolio_aggregate_stats
 
-    def get_portfolio_composition_stats(self) -> Dict[str, pd.DataFrame]:
-        return self.portfolio_composition_stats
+    def get_portfolio_stock_composition_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
+        final_df = self.portfolio_stock_composition_stats
+        if combined:
+            dfs = []
+            for date, df in self.portfolio_stock_composition_stats.items():
+                df['date'] = date
+                dfs.append(df)
+            final_df = pd.concat(dfs)
+        return final_df
+
+    def get_portfolio_category_composition_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
+        final_df = self.portfolio_category_composition_stats
+        if combined:
+            dfs = []
+            for date, df in self.portfolio_category_composition_stats.items():
+                df['date'] = date
+                dfs.append(df)
+            final_df = pd.concat(dfs)
+        return final_df
 
     def run(self):
         if len(self.portfolio_stocks+self.watchlist_stocks+self.index_tracker_stocks) > 0:
@@ -291,5 +462,8 @@ class StockDataConsumer():
         for s in self.portfolio_stocks:
             self.portfolio_stock_stats[s.symbol] = self._calculate_portfolio_stats_for_stock(symbol=s.symbol)
         self.portfolio_aggregate_stats = self._aggregate_portfolio_stock_stats()
-        for date in self.portfolio_market_dates:
-            self.portfolio_composition_stats[date] = self._calculate_portfolio_composition_stats(date=date)
+        for i in range(0, len(self.portfolio_market_dates)):
+            date = self.portfolio_market_dates[i]
+            stock_c, category_c = self._calculate_portfolio_composition_stats(index=i)
+            self.portfolio_stock_composition_stats[date] = stock_c
+            self.portfolio_category_composition_stats[date] = category_c

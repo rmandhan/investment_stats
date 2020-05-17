@@ -20,15 +20,21 @@ sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols, stock_c
 sdc.run()
 
 portfolio_stock_stats = sdc.get_portfolio_stock_stats()
-portfolio_stock_stats_combined = sdc.get_portfolio_stock_stats_combined()
 portfolio_aggregated_stats = sdc.get_portfolio_aggregate_stats()
+portfolio_stock_composition_stats = sdc.get_portfolio_stock_composition_stats()
+portfolio_category_composition_stats = sdc.get_portfolio_category_composition_stats()
 
 # for k,v in portfolio_stock_stats.items():
 #     print('-------- PORTFOLIO STATS FOR {} --------'.format(k))
 #     print(sdc._print_df(v))
 
-# print('-------- PORTFOLIO STATS FOR ALL STOCKS --------')
-# print(sdc._print_df(portfolio_stock_stats_combined))
-
 # print('-------- AGGREGATED PORTFOLIO STATS --------')
 # print(sdc._print_df(portfolio_aggregated_stats))
+
+# for k,v in portfolio_stock_composition_stats.items():
+#     print('-------- PORTFOLIO STOCK COMPOSITION STATS FOR {} --------'.format(k))
+#     print(sdc._print_df(v))
+
+# for k,v in portfolio_category_composition_stats.items():
+#     print('-------- PORTFOLIO CATEGORY COMPOSITION STATS FOR {} --------'.format(k))
+#     print(sdc._print_df(v))

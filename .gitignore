@@ -14,5 +14,6 @@ notebooks/*
 # Sensitive Inputs
 api_keys/*
 inputs/positions*
+inputs/categories.yml
 # Data Store
 data/*
