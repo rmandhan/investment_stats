@@ -41,12 +41,14 @@ COMP_MARKET_KEY = 'composition_market'
 REL_UNREALIZED_GAIN_KEY = 'relative_unrealized_gain'
 REL_REALIZED_GAIN_KEY = 'relative_realized_gain'
 REL_TOTAL_GAIN_KEY = 'relative_total_gain'
+DESIRED_COMP_INV_DIFF_KEY = 'desired_composition_invested_diff'
 
 class StockDataConsumer():
 
-    def __init__(self, all_symbols: List[str], stock_categories: Dict[str, str], index_tracker_stocks: List[Stock], watchlist_stocks: List[Stock], portfolio_stocks: List[Stock], positions: List[Position]):
+    def __init__(self, all_symbols: List[str], stock_categories: Dict[str, str], category_allocations: Dict[str, float], index_tracker_stocks: List[Stock], watchlist_stocks: List[Stock], portfolio_stocks: List[Stock], positions: List[Position]):
         self.all_symbols = all_symbols
         self.stock_categories = stock_categories
+        self.category_allocations = category_allocations
         self.index_tracker_stocks = index_tracker_stocks
         self.watchlist_stocks = watchlist_stocks
         self.portfolio_stocks = portfolio_stocks
@@ -314,9 +316,10 @@ class StockDataConsumer():
         unrealized_gain_a_c_l = []
         total_gain_a_c_l = []
         # Derived at the end
-        realized_pct_gain_a_s_l = []
-        unrealized_pct_gain_a_s_l = []
-        total_pct_gain_a_s_l = []
+        realized_pct_gain_a_c_l = []
+        unrealized_pct_gain_a_c_l = []
+        total_pct_gain_a_c_l = []
+        comp_inv_diff_a_c_l = []
         # Intialize category dictionaries
         for cat in unique_categories:
             composition_invested_a_c[cat] = 0
@@ -328,10 +331,12 @@ class StockDataConsumer():
             realized_gain_a_c[cat] = 0
             unrealized_gain_a_c[cat] = 0
             total_gain_a_c[cat] = 0
+        categories_found = {}
         # Iterate over each stock
         for symbol, stock in stock_stats.items():
             stock_values = stock.iloc[index]
             cat = stock_categories.get(symbol, 'Unknown')
+            categories_found[cat] = 1
             # Calculate composition and relative values for stock_c_df
             composition_invested = (stock_values[INVESTED_AMOUNT_KEY]/aggregated_values[INVESTED_AMOUNT_KEY])*100
             composition_market = (stock_values[MARKET_VALUE_KEY]/aggregated_values[MARKET_VALUE_KEY])*100
@@ -383,7 +388,7 @@ class StockDataConsumer():
         stock_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_s
         # Calculate remaining values and create category_c_df
         # Build the final arrays
-        for cat in unique_categories:
+        for cat in categories_found.keys():
             composition_invested_a_c_l.append(composition_invested_a_c[cat])
             composition_market_a_c_l.append(composition_market_a_c[cat])
             relative_realized_gains_a_c_l.append(relative_realized_gains_a_c[cat])
@@ -403,10 +408,16 @@ class StockDataConsumer():
                 realized_pct_gain_c = 0
                 unrealized_pct_gain_c = 0
                 total_pct_gain_c = 0
-            realized_pct_gain_a_s_l.append(realized_pct_gain_c)
-            unrealized_pct_gain_a_s_l.append(unrealized_pct_gain_c)
-            total_pct_gain_a_s_l.append(total_pct_gain_c)
-        category_c_df[CATEGORY_KEY] = unique_categories
+            realized_pct_gain_a_c_l.append(realized_pct_gain_c)
+            unrealized_pct_gain_a_c_l.append(unrealized_pct_gain_c)
+            total_pct_gain_a_c_l.append(total_pct_gain_c)
+            # Calculate composition invested diff
+            comp_diff = composition_invested_a_c[cat]
+            if cat != 'Unknown' and cat in self.category_allocations:
+                desired_comp = self.category_allocations[cat]
+                comp_diff = composition_invested_a_c[cat]-desired_comp
+            comp_inv_diff_a_c_l.append(comp_diff)
+        category_c_df[CATEGORY_KEY] = categories_found.keys()
         category_c_df[COMP_INVESTED_KEY] = composition_invested_a_c_l
         category_c_df[COMP_MARKET_KEY] = composition_market_a_c_l
         category_c_df[REL_REALIZED_GAIN_KEY] = relative_realized_gains_a_c_l
@@ -416,9 +427,10 @@ class StockDataConsumer():
         category_c_df[REALIZED_GAIN_KEY] = realized_gain_a_c_l
         category_c_df[UNREALIZED_GAIN_KEY] = unrealized_gain_a_c_l
         category_c_df[TOTAL_GAIN_KEY] = total_gain_a_c_l
-        category_c_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a_s_l
-        category_c_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a_s_l
-        category_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_s_l
+        category_c_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a_c_l
+        category_c_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a_c_l
+        category_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_c_l
+        category_c_df[DESIRED_COMP_INV_DIFF_KEY] = comp_inv_diff_a_c_l
         return stock_c_df.round(ROUNDING_DECIMAL_PLACES), category_c_df.round(ROUNDING_DECIMAL_PLACES)
 
     def get_portfolio_stock_stats(self, combined=False) -> Dict[str, pd.DataFrame]:

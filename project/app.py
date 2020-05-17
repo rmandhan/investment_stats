@@ -14,9 +14,13 @@ sdm = stock_data_manager.StockDataManager()
 sdm._testing = True
 sdm.run()
 
-sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols, stock_categories=sdm.stock_categories, 
-                                        index_tracker_stocks=sdm.index_tracker_stocks, watchlist_stocks=sdm.watchlist_stocks,
-                                        portfolio_stocks=sdm.portfolio_stocks, positions=sdm.positions)
+sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols,
+                                            stock_categories=sdm.stock_categories,
+                                            category_allocations=sdm.category_allocations,
+                                            index_tracker_stocks=sdm.index_tracker_stocks,
+                                            watchlist_stocks=sdm.watchlist_stocks,
+                                            portfolio_stocks=sdm.portfolio_stocks,
+                                            positions=sdm.positions)
 sdc.run()
 
 portfolio_stock_stats = sdc.get_portfolio_stock_stats()

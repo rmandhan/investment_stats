@@ -11,9 +11,10 @@ tmp/*
 project/logs/*
 notebooks/*
 
-# Sensitive Inputs
+# Ignore Sensitive Inputs
 api_keys/*
-inputs/positions*
-inputs/categories.yml
+inputs/*
+!inputs/watchlist.yml
+!inputs/index_trackers.csv
 # Data Store
 data/*

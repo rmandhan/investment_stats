@@ -20,7 +20,8 @@ LOGDIR = '{}/logs'.format(sys.path[0])
 YF_POSITIONS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/positions.csv'
 INDEX_TRACKERS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/index_trackers.yml'
 WATCHLIST_STOCKS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/watchlist.yml'
-STOCK_CATEGORIES_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/categories.yml'
+STOCK_CATEGORIES_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/stock_categories.yml'
+CATEGORY_ALLOCATION_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/category_allocation.yml'
 
 # Outputs/Storage
 STOCK_DATA_DIR = '/Users/rakesh/Developer/portfolio_stats/data'
@@ -38,6 +39,7 @@ class StockDataManager:
         self._setup_logger()
         self.all_symbols = []
         self.stock_categories = {}
+        self.category_allocations = {}
         self.index_tracker_stocks = []
         self.watchlist_stocks = []
         self.portfolio_stocks = []
@@ -76,6 +78,14 @@ class StockDataManager:
         stock = Stock(symbol=metadata.symbol, company_name=metadata.company_name, industry=metadata.industry, issue_type=metadata.issue_type, latest_quote=latest.quote, day_quotes=historical.day_quotes)
         return stock
 
+    def _check_category_allocations(self):
+        total = 0
+        for n in self.category_allocations.values():
+            total += n
+        if total != 100:
+            self.logger.error('Category allocations do not add up to 100')
+            raise ValueError('Category allocations do not add up to 100')
+
     def get_all_symbols(self) -> List[str]:
         return self.all_symbols
 
@@ -93,6 +103,9 @@ class StockDataManager:
 
     def get_stock_categories(self) -> Dict[str, str]:
         return self.stock_categories
+
+    def get_category_allocations(self) -> Dict[str, float]:
+        return self.category_allocations
 
     def fetch_stock_data(self, symbols: List[str]) -> List[Stock]:
         stock_data = []
@@ -138,6 +151,8 @@ class StockDataManager:
         index_trackers = yfr.read_stocks_file(file=INDEX_TRACKERS_FILE)
         watchlist = yfr.read_stocks_file(file=WATCHLIST_STOCKS_FILE)
         self.stock_categories = yfr.read_category_file(file=STOCK_CATEGORIES_FILE)
+        self.category_allocations = yfr.read_category_allocation_file(file=CATEGORY_ALLOCATION_FILE)
+        self._check_category_allocations()
 
         self.positions = positions
         position_symbols = self._extract_symbols(positions=positions)
