@@ -12,3 +12,4 @@ bokeh
 jupyterlab-dash
 numpy
 pandas
+scipy

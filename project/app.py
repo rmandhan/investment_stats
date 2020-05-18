@@ -23,22 +23,31 @@ sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols,
                                             positions=sdm.positions)
 sdc.run()
 
+portfolio_market_dates = sdc.portfolio_market_dates
+
 portfolio_stock_stats = sdc.get_portfolio_stock_stats()
 portfolio_aggregated_stats = sdc.get_portfolio_aggregate_stats()
 portfolio_stock_composition_stats = sdc.get_portfolio_stock_composition_stats()
 portfolio_category_composition_stats = sdc.get_portfolio_category_composition_stats()
 
+# Pick last date
+date = portfolio_market_dates[len(portfolio_market_dates)-1]
+allocation_solution = sdc.maximize_desired_allocation(date=date)
+
 # for k,v in portfolio_stock_stats.items():
 #     print('-------- PORTFOLIO STATS FOR {} --------'.format(k))
-#     print(sdc._print_df(v))
+#     sdc._print_df(v)
 
 # print('-------- AGGREGATED PORTFOLIO STATS --------')
-# print(sdc._print_df(portfolio_aggregated_stats))
+# sdc._print_df(portfolio_aggregated_stats)
 
 # for k,v in portfolio_stock_composition_stats.items():
 #     print('-------- PORTFOLIO STOCK COMPOSITION STATS FOR {} --------'.format(k))
-#     print(sdc._print_df(v))
+#     sdc._print_df(v)
 
 # for k,v in portfolio_category_composition_stats.items():
 #     print('-------- PORTFOLIO CATEGORY COMPOSITION STATS FOR {} --------'.format(k))
-#     print(sdc._print_df(v))
+#     sdc._print_df(v)
+
+# print('-------- ALLOCATION BREAK EVEN FOR {} --------'.format(date))
+# sdc._print_df(allocation_solution)

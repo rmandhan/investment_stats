@@ -4,6 +4,7 @@ import pytz
 
 from datetime import datetime, timezone
 from typing import List, Dict, Tuple
+from scipy.optimize import minimize
 from data_types import *
 
 MIN_DATETIME = datetime(year=1, month=1, day=1, tzinfo=timezone.utc)
@@ -41,7 +42,9 @@ COMP_MARKET_KEY = 'composition_market'
 REL_UNREALIZED_GAIN_KEY = 'relative_unrealized_gain'
 REL_REALIZED_GAIN_KEY = 'relative_realized_gain'
 REL_TOTAL_GAIN_KEY = 'relative_total_gain'
+DESIRED_ALLOCATION_KEY = 'desired_allocation'
 DESIRED_COMP_INV_DIFF_KEY = 'desired_composition_invested_diff'
+ALLOCATION_BREAK_EVEN_KEY = 'allocation_break_even'
 
 class StockDataConsumer():
 
@@ -319,6 +322,7 @@ class StockDataConsumer():
         realized_pct_gain_a_c_l = []
         unrealized_pct_gain_a_c_l = []
         total_pct_gain_a_c_l = []
+        desired_allocation_a_c_l = []
         comp_inv_diff_a_c_l = []
         # Intialize category dictionaries
         for cat in unique_categories:
@@ -413,10 +417,12 @@ class StockDataConsumer():
             total_pct_gain_a_c_l.append(total_pct_gain_c)
             # Calculate composition invested diff
             comp_diff = composition_invested_a_c[cat]
+            desired_comp = 0
             if cat != 'Unknown' and cat in self.category_allocations:
                 desired_comp = self.category_allocations[cat]
                 comp_diff = composition_invested_a_c[cat]-desired_comp
             comp_inv_diff_a_c_l.append(comp_diff)
+            desired_allocation_a_c_l.append(desired_comp)
         category_c_df[CATEGORY_KEY] = categories_found.keys()
         category_c_df[COMP_INVESTED_KEY] = composition_invested_a_c_l
         category_c_df[COMP_MARKET_KEY] = composition_market_a_c_l
@@ -430,8 +436,51 @@ class StockDataConsumer():
         category_c_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a_c_l
         category_c_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a_c_l
         category_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_c_l
+        category_c_df[DESIRED_ALLOCATION_KEY] = desired_allocation_a_c_l
         category_c_df[DESIRED_COMP_INV_DIFF_KEY] = comp_inv_diff_a_c_l
         return stock_c_df.round(ROUNDING_DECIMAL_PLACES), category_c_df.round(ROUNDING_DECIMAL_PLACES)
+
+    def maximize_desired_allocation(self, date: datetime) -> pd.DataFrame():
+        final_df = pd.DataFrame()
+        category_df = self.portfolio_category_composition_stats[date]
+
+        current_inv_amount = category_df[INVESTED_AMOUNT_KEY]
+        desired_allocation_amount = category_df[DESIRED_ALLOCATION_KEY].divide(100)
+        unknown_vars_count = category_df.shape[0]
+
+        # Define objective & constraints
+        def objective(x):
+            return sum(x)
+        def ineq_cons(x):
+            return sum(x)
+        constraint_funcs = {}
+        inv_amount_sum = sum(current_inv_amount)
+        for i in range(unknown_vars_count):
+            inv_amount = current_inv_amount[i]
+            desired_allocation = desired_allocation_amount[i]
+            code = """def eq_cons_{0:d}(x): return (({1:f}+x[{0:d}])/(sum(x)+{2:f}))-{3:f}""".format(i, inv_amount, inv_amount_sum, desired_allocation)
+            exec(code, {}, constraint_funcs)
+
+        # Create constraints list
+        cons = []
+        cons.append({'type': 'ineq','fun': ineq_cons})
+        for i in range(unknown_vars_count):
+            cons.append({'type': 'ineq', 'fun': constraint_funcs['eq_cons_{0:d}'.format(i)]})
+
+        # TODO: Improve bounds & initial guess
+        bnds = [(0.0, inv_amount_sum)] * unknown_vars_count
+        x0 = [1] * unknown_vars_count
+
+        # Minimize
+        sol = minimize(objective, x0, method='SLSQP', bounds=bnds, constraints=cons)
+        solution = [0] * unknown_vars_count
+        if sol.success:
+            solution = np.around(sol.x, decimals=2)
+
+        final_df[CATEGORY_KEY] = category_df[CATEGORY_KEY]
+        final_df[ALLOCATION_BREAK_EVEN_KEY] = solution
+
+        return final_df
 
     def get_portfolio_stock_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
         final_df = self.portfolio_stock_stats
