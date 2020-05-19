@@ -121,6 +121,7 @@ class StockDataConsumer():
         open_price_a = []
         close_price_a = []
         volume_a = []
+        company_a = []
         # Get stock and it's transactions
         stock = self.stock_df_map[symbol]
         transactions = self.positions_df_map[symbol]
@@ -175,6 +176,7 @@ class StockDataConsumer():
             open_price = stock.iloc[df_index][OPEN_KEY]
             close_price = stock.iloc[df_index][CLOSE_KEY]
             volume  = stock.iloc[df_index][VOLUME_KEY]
+            company = stock.iloc[df_index][COMPANY_NAME_KEY]
             # Calculate values based on transactions or previous day's values
             invested_amount_d = quantity_d*average_cost_d
             if invested_amount_d > 0:
@@ -200,6 +202,7 @@ class StockDataConsumer():
             open_price_a.append(open_price)
             close_price_a.append(close_price)
             volume_a.append(volume)
+            company_a.append(company)
         # Create and return final df
         final_df[DATE_KEY] = dates_a
         final_df[INVESTED_AMOUNT_KEY] = invested_amount_a
@@ -217,6 +220,7 @@ class StockDataConsumer():
         final_df[OPEN_KEY] = open_price_a
         final_df[CLOSE_KEY] = close_price_a
         final_df[VOLUME_KEY] = volume_a
+        final_df[COMPANY_NAME_KEY] = company_a
         return final_df.round(ROUNDING_DECIMAL_PLACES)
     
     def _aggregate_portfolio_stock_stats(self) -> pd.DataFrame:
@@ -298,6 +302,7 @@ class StockDataConsumer():
         unrealized_pct_gain_a_s = []
         total_gain_a_s = []
         total_pct_gain_a_s = []
+        company_name_a_s = []
         # category_c_df is derived from these dictionaries
         composition_invested_a_c = {}
         composition_market_a_c = {}
@@ -365,6 +370,7 @@ class StockDataConsumer():
             unrealized_pct_gain_a_s.append(stock_values[UNREALIZED_PCT_GAIN_KEY])
             total_gain_a_s.append(stock_values[TOTAL_GAIN_KEY])
             total_pct_gain_a_s.append(stock_values[TOTAL_PCT_GAIN_KEY])
+            company_name_a_s.append(stock_values[COMPANY_NAME_KEY])
             # Update values for this category for category_c_df
             composition_invested_a_c[cat] += composition_invested
             composition_market_a_c[cat] += composition_market
@@ -390,6 +396,7 @@ class StockDataConsumer():
         stock_c_df[UNREALIZED_PCT_GAIN_KEY] = unrealized_pct_gain_a_s
         stock_c_df[TOTAL_GAIN_KEY] = total_gain_a_s
         stock_c_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a_s
+        stock_c_df[COMPANY_NAME_KEY] = company_name_a_s
         # Calculate remaining values and create category_c_df
         # Build the final arrays
         for cat in categories_found.keys():

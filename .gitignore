@@ -9,7 +9,10 @@ __pycache__/
 venv/*
 tmp/*
 project/logs/*
+
+# Notebooks
 notebooks/*
+!notebooks/stats.ipynb
 
 # Ignore Sensitive Inputs
 api_keys/*

@@ -13,3 +13,4 @@ jupyterlab-dash
 numpy
 pandas
 scipy
+statsmodels
