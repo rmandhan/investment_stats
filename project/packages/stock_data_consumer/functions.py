@@ -489,6 +489,15 @@ class StockDataConsumer():
 
         return final_df
 
+    def get_symbols_for_stocks(self, stocks: [Stock]) -> List[str]:
+        symbols = []
+        for s in stocks:
+            symbols.append(s.symbol)
+        return symbols
+
+    def get_all_stock_dfs(self) -> Dict[str, pd.DataFrame]:
+        return self.stock_df_map
+    
     def get_portfolio_stock_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
         final_df = self.portfolio_stock_stats
         if combined:
