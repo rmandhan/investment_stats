@@ -35,8 +35,8 @@ class StockDataManager:
 
     _testing = False
 
-    def __init__(self):
-        self._setup_logger()
+    def __init__(self, console_logging_level=logging.INFO):
+        self._setup_logger(c_lvl=console_logging_level)
         self.all_symbols = []
         self.stock_categories = {}
         self.category_allocations = {}
@@ -45,7 +45,7 @@ class StockDataManager:
         self.portfolio_stocks = []
         self.positions = []
 
-    def _setup_logger(self):
+    def _setup_logger(self, c_lvl: str):
         logger = logging.getLogger('StockDataManager')
         logger.setLevel(LOGLEVEL)
         if not os.path.exists(LOGDIR):
@@ -53,7 +53,7 @@ class StockDataManager:
         rh = logging.handlers.RotatingFileHandler('{}/stock_data_manager.log'.format(LOGDIR), maxBytes=1000000, backupCount=3)
         rh.setLevel(LOGLEVEL)
         ch = logging.StreamHandler()
-        ch.setLevel(logging.ERROR)
+        ch.setLevel(c_lvl)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         rh.setFormatter(formatter)
         ch.setFormatter(formatter)
@@ -111,6 +111,11 @@ class StockDataManager:
         stock_data = []
         # Initialize data store
         ds = DataStore(data_dir=STOCK_DATA_DIR)
+        # Instantiate API clients
+        iex = IEXAPI(api_key_path=IEX_API_KEY)
+        finnhub = FinnhubAPI(api_key_path=FINNHUB_API_KEY)
+        tiingo = TiingoAPI(api_key_path=TIINGO_API_KEY)
+        # Process all symbols
         for symbol in symbols:
             # Read data from local storage
             metadata = ds.read_stock_metadata(symbol=symbol)
@@ -118,17 +123,14 @@ class StockDataManager:
             historical = ds.read_stock_historical(symbol=symbol)
             if not self._testing:
                 # Fetch/update metadata for all symbols using IEX API
-                iex = IEXAPI(api_key_path=IEX_API_KEY)
                 metadata, updated = iex.update_metadata(symbol=symbol, metadata=metadata)
                 # Update local storage
                 if updated: ds.write_stock_metadata(symbol=symbol, metadata=metadata)
                 # Fetch/update latest quote data for all symbols using Finhub API
-                finnhub = FinnhubAPI(api_key_path=FINNHUB_API_KEY)
                 latest, updated = finnhub.update_latest(symbol=symbol, latest=latest)
                 # Update local storage
                 if updated: ds.write_stock_latest(symbol=symbol, latest=latest)
                 # Fetch/update historical data for all symbols using Tiingo API
-                tiingo = TiingoAPI(api_key_path=TIINGO_API_KEY)
                 historical, updated = tiingo.update_historical(symbol=symbol, historical=historical)
                 # Update local storage
                 if updated: ds.write_stock_historical(symbol=symbol, historical=historical)

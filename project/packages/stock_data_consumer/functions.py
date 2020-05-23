@@ -45,6 +45,7 @@ REL_TOTAL_GAIN_KEY = 'relative_total_gain'
 DESIRED_ALLOCATION_KEY = 'desired_allocation'
 DESIRED_COMP_INV_DIFF_KEY = 'desired_composition_invested_diff'
 ALLOCATION_BREAK_EVEN_KEY = 'allocation_break_even'
+ALLOCATION_BREAK_EVEN_PCT_KEY = 'allocation_break_even_pct'
 
 class StockDataConsumer():
 
@@ -483,9 +484,17 @@ class StockDataConsumer():
         solution = [0] * unknown_vars_count
         if sol.success:
             solution = np.around(sol.x, decimals=2)
+        
+        # Construct array based on solution
+        break_even_pct = []
+        solution_sum=np.sum(sol.x)
+        for x in sol.x:
+            pct = np.around((x/solution_sum)*100, decimals=2)
+            break_even_pct.append(pct)
 
         final_df[CATEGORY_KEY] = category_df[CATEGORY_KEY]
         final_df[ALLOCATION_BREAK_EVEN_KEY] = solution
+        final_df[ALLOCATION_BREAK_EVEN_PCT_KEY] = break_even_pct
 
         return final_df
 
@@ -495,10 +504,17 @@ class StockDataConsumer():
             symbols.append(s.symbol)
         return symbols
 
-    def get_all_stock_dfs(self) -> Dict[str, pd.DataFrame]:
-        return self.stock_df_map
+    def get_all_stock_dfs(self, combined=False):
+        final_df = self.stock_df_map
+        if combined:
+            dfs = []
+            for symbol, df in self.stock_df_map.items():
+                df['symbol'] = symbol
+                dfs.append(df)
+            final_df = pd.concat(dfs)
+        return final_df
     
-    def get_portfolio_stock_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
+    def get_portfolio_stock_stats(self, combined=False):
         final_df = self.portfolio_stock_stats
         if combined:
             dfs = []
@@ -511,7 +527,7 @@ class StockDataConsumer():
     def get_portfolio_aggregate_stats(self) -> pd.DataFrame:
         return self.portfolio_aggregate_stats
 
-    def get_portfolio_stock_composition_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
+    def get_portfolio_stock_composition_stats(self, combined=False):
         final_df = self.portfolio_stock_composition_stats
         if combined:
             dfs = []
@@ -521,7 +537,7 @@ class StockDataConsumer():
             final_df = pd.concat(dfs)
         return final_df
 
-    def get_portfolio_category_composition_stats(self, combined=False) -> Dict[str, pd.DataFrame]:
+    def get_portfolio_category_composition_stats(self, combined=False):
         final_df = self.portfolio_category_composition_stats
         if combined:
             dfs = []
