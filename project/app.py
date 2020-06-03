@@ -14,12 +14,12 @@ from packages import stock_data_consumer
 PRINT_OUTPUTS=False
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-t', '--testing', type=bool, required=True,
+parser.add_argument('-t', '--testing', type=int, required=True,
                    help='Disable testing to use API to refresh Data')
 args = parser.parse_args()
 
 sdm = stock_data_manager.StockDataManager()
-sdm._testing = args.testing
+sdm._testing = bool(args.testing)
 sdm.run()
 
 sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols,
