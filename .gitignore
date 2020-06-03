@@ -22,3 +22,7 @@ inputs/*
 !inputs/index_trackers.csv
 # Data Store
 data/*
+
+# Node
+node_modules/*
+package-lock.json

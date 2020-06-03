@@ -1,5 +1,6 @@
 import sys
 import os
+import argparse
 
 from typing import List, Dict
 from datetime import datetime, timedelta
@@ -10,8 +11,15 @@ from packages import data_types
 from packages import stock_data_manager
 from packages import stock_data_consumer
 
+PRINT_OUTPUTS=False
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-t', '--testing', type=bool, required=True,
+                   help='Disable testing to use API to refresh Data')
+args = parser.parse_args()
+
 sdm = stock_data_manager.StockDataManager()
-sdm._testing = True
+sdm._testing = args.testing
 sdm.run()
 
 sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols,
@@ -34,20 +42,17 @@ portfolio_category_composition_stats = sdc.get_portfolio_category_composition_st
 date = portfolio_market_dates[len(portfolio_market_dates)-1]
 allocation_solution = sdc.maximize_desired_allocation(date=date)
 
-# for k,v in portfolio_stock_stats.items():
-#     print('-------- PORTFOLIO STATS FOR {} --------'.format(k))
-#     sdc._print_df(v)
-
-# print('-------- AGGREGATED PORTFOLIO STATS --------')
-# sdc._print_df(portfolio_aggregated_stats)
-
-# for k,v in portfolio_stock_composition_stats.items():
-#     print('-------- PORTFOLIO STOCK COMPOSITION STATS FOR {} --------'.format(k))
-#     sdc._print_df(v)
-
-# for k,v in portfolio_category_composition_stats.items():
-#     print('-------- PORTFOLIO CATEGORY COMPOSITION STATS FOR {} --------'.format(k))
-#     sdc._print_df(v)
-
-# print('-------- ALLOCATION BREAK EVEN FOR {} --------'.format(date))
-# sdc._print_df(allocation_solution)
+if PRINT_OUTPUTS:
+    for k,v in portfolio_stock_stats.items():
+        print('-------- PORTFOLIO STATS FOR {} --------'.format(k))
+        sdc._print_df(v)
+    print('-------- AGGREGATED PORTFOLIO STATS --------')
+    sdc._print_df(portfolio_aggregated_stats)
+    for k,v in portfolio_stock_composition_stats.items():
+        print('-------- PORTFOLIO STOCK COMPOSITION STATS FOR {} --------'.format(k))
+        sdc._print_df(v)
+    for k,v in portfolio_category_composition_stats.items():
+        print('-------- PORTFOLIO CATEGORY COMPOSITION STATS FOR {} --------'.format(k))
+        sdc._print_df(v)
+    print('-------- ALLOCATION BREAK EVEN FOR {} --------'.format(date))
+    sdc._print_df(allocation_solution)
