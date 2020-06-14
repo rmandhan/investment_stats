@@ -285,21 +285,21 @@ class StockDataConsumer():
         final_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a
         return final_df.round(ROUNDING_DECIMAL_PLACES)
     
-    def _calculate_portfolio_index_comparisons(self) -> pd.DataFrame:
+    def _calculate_portfolio_stock_comparisons(self, stocks: List[Stock]) -> pd.DataFrame:
         final_df = pd.DataFrame()
         dates_a = self.portfolio_market_dates
         tmp_dfs = []
         # Calculate pct gain for each index tracker and create a df
-        for s in self.index_tracker_stocks:
+        for s in stocks:
             df = pd.DataFrame()
-            stock = self.stock_df_map[s.symbol]
+            stock_data = self.stock_df_map[s.symbol]
             num_dates = len(dates_a)
-            x0 = stock.iloc[stock.shape[0]-num_dates][CLOSE_KEY]
+            x0 = stock_data.iloc[stock_data.shape[0]-num_dates][CLOSE_KEY]
             pct_gain_a = [0]
             mkt_value_a = [x0]
             for i in range(1, num_dates):
-                df_index = stock.shape[0]-num_dates+i # Offset
-                close_price = stock.iloc[df_index][CLOSE_KEY]
+                df_index = stock_data.shape[0]-num_dates+i # Offset
+                close_price = stock_data.iloc[df_index][CLOSE_KEY]
                 pct_gain_a.append(((close_price-x0)/x0)*100)
                 mkt_value_a.append(close_price)
             df[DATE_KEY] = dates_a
@@ -603,6 +603,9 @@ class StockDataConsumer():
     def get_portfolio_index_comparison_stats(self) -> pd.DataFrame:
         return self.portfolio_index_comparisons
 
+    def get_portfolio_stock_comparison_stats(self) -> pd.DataFrame:
+        return self.portfolio_stock_comparisons
+
     def run(self):
         if len(self.portfolio_stocks+self.watchlist_stocks+self.index_tracker_stocks) > 0:
             self._derive_base_stock_data()
@@ -611,7 +614,8 @@ class StockDataConsumer():
         for s in self.portfolio_stocks:
             self.portfolio_stock_stats[s.symbol] = self._calculate_portfolio_stats_for_stock(symbol=s.symbol)
         self.portfolio_aggregate_stats = self._aggregate_portfolio_stock_stats()
-        self.portfolio_index_comparisons = self._calculate_portfolio_index_comparisons()
+        self.portfolio_index_comparisons = self._calculate_portfolio_stock_comparisons(stocks=self.index_tracker_stocks)
+        self.portfolio_stock_comparisons = self._calculate_portfolio_stock_comparisons(stocks=self.portfolio_stocks)
         for i in range(0, len(self.portfolio_market_dates)):
             date = self.portfolio_market_dates[i]
             stock_c, category_c = self._calculate_portfolio_composition_stats(index=i)
