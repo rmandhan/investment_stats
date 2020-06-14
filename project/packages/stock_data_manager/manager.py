@@ -17,7 +17,9 @@ LOGLEVEL = logging.DEBUG
 LOGDIR = '{}/logs'.format(sys.path[0])
 
 # Inputs
-YF_POSITIONS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/positions.csv'
+YF_PORTOFOLIO_DIR = '/Users/rakesh/Developer/portfolio_stats/inputs'
+DEFAULT_PORTFOLIO_NAME = 'main'
+PORTFOLIO_FILE_EXT = '.csv'
 INDEX_TRACKERS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/index_trackers.yml'
 WATCHLIST_STOCKS_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/watchlist.yml'
 STOCK_CATEGORIES_FILE = '/Users/rakesh/Developer/portfolio_stats/inputs/stock_categories.yml'
@@ -35,8 +37,9 @@ class StockDataManager:
 
     _testing = False
 
-    def __init__(self, console_logging_level=logging.INFO):
+    def __init__(self, console_logging_level=logging.INFO, portfolio_name=DEFAULT_PORTFOLIO_NAME):
         self._setup_logger(c_lvl=console_logging_level)
+        self.portfolio_name = portfolio_name
         self.all_symbols = []
         self.stock_categories = {}
         self.category_allocations = {}
@@ -145,7 +148,10 @@ class StockDataManager:
     def run(self):
 
         # Get positions data
-        pos_reader = YFPositionsReader(file=YF_POSITIONS_FILE)
+        portfolio_file = YF_PORTOFOLIO_DIR + '/' + self.portfolio_name + PORTFOLIO_FILE_EXT
+        self.logger.info('Portfolio File: {}'.format(portfolio_file))
+
+        pos_reader = YFPositionsReader(file=portfolio_file)
         positions = pos_reader.run()
 
         # Get data from other stock files
