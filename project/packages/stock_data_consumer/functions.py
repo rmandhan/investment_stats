@@ -49,7 +49,7 @@ ALLOCATION_BREAK_EVEN_PCT_KEY = 'allocation_break_even_pct'
 
 class StockDataConsumer():
 
-    def __init__(self, all_symbols: List[str], stock_categories: Dict[str, str], category_allocations: Dict[str, float], index_tracker_stocks: List[Stock], watchlist_stocks: List[Stock], portfolio_stocks: List[Stock], positions: List[Position]):
+    def __init__(self, all_symbols: List[str], stock_categories: Dict[str, str], category_allocations: Dict[str, float], index_tracker_stocks: List[Stock], watchlist_stocks: List[Stock], portfolio_stocks: List[Stock], positions: List[Position], use_latest_quote=False):
         self.all_symbols = all_symbols
         self.stock_categories = stock_categories
         self.category_allocations = category_allocations
@@ -57,6 +57,7 @@ class StockDataConsumer():
         self.watchlist_stocks = watchlist_stocks
         self.portfolio_stocks = portfolio_stocks
         self.positions = positions
+        self.use_latest_quote = use_latest_quote
         # Outputs
         self.portfolio_stock_stats = {} # Key = Symbol
         self.portfolio_aggregate_stats = pd.DataFrame()
@@ -67,7 +68,7 @@ class StockDataConsumer():
         stock_df_map = {}
         stocks = self.portfolio_stocks+self.watchlist_stocks+self.index_tracker_stocks
         for s in stocks:
-            stock_df_map[s.symbol] = s.df()
+            stock_df_map[s.symbol] = s.df(include_latest=self.use_latest_quote)
         self.stock_df_map = stock_df_map
 
     def _derive_base_portfolio_data(self):
@@ -93,7 +94,8 @@ class StockDataConsumer():
             if q.date >= portfolio_start_date:
                 portfolio_market_dates.append(q.date)
         # Also add date from the latest stock data
-        portfolio_market_dates.append(stock_to_use.latest_quote.date)
+        if self.use_latest_quote:
+            portfolio_market_dates.append(stock_to_use.latest_quote.date)
         # Update class variables
         self.positions_df_map = positions_df_map
         self.portfolio_start_date = portfolio_start_date

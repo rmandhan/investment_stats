@@ -73,9 +73,11 @@ class Stock():
         text = '\n'.join(text_list)
         return text
 
-    def df(self) -> pd.DataFrame:
+    def df(self, include_latest=False) -> pd.DataFrame:
         date_a, high_a, low_a, open_a, close_a, volume_a = [], [], [], [], [], []
-        all_quotes = self.day_quotes+[self.latest_quote]
+        all_quotes = self.day_quotes
+        if include_latest:
+            all_quotes.append(self.latest_quote)
         for q in all_quotes:
             date_a.append(q.date)
             high_a.append(q.high)
