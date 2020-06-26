@@ -75,7 +75,7 @@ class Stock():
 
     def df(self, include_latest=False) -> pd.DataFrame:
         date_a, high_a, low_a, open_a, close_a, volume_a = [], [], [], [], [], []
-        all_quotes = self.day_quotes
+        all_quotes = self.day_quotes.copy()
         if include_latest:
             all_quotes.append(self.latest_quote)
         for q in all_quotes:

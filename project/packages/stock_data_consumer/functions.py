@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pytz
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Tuple
 from scipy.optimize import minimize
 from data_types import *
@@ -11,6 +11,8 @@ MIN_DATETIME = datetime(year=1, month=1, day=1, tzinfo=timezone.utc)
 MAX_DATETIME = datetime(year=9999, month=12, day=31, tzinfo=timezone.utc)
 
 ROUNDING_DECIMAL_PLACES = 2
+ANNUALIZED_RETURN_UPPER_THRESHOLD = 300
+ANNUALIZED_RETURN_LOWER_THRESHOLD = -100
 
 # Pre-defined Data Keys
 SYMBOL_KEY = Stock._symbol_key
@@ -35,6 +37,8 @@ REALIZED_GAIN_KEY = 'realized_gain'
 REALIZED_PCT_GAIN_KEY = 'realized_pct_gain'
 TOTAL_GAIN_KEY = 'total_gain'
 TOTAL_PCT_GAIN_KEY = 'total_pct_gain'
+ANNUALIZED_PCT_RETURN_KEY = 'annualized_pct_return'
+DAYS_ELAPSED_KEY = 'days_elapsed'
 AVERAGE_COST_KEY = 'average_cost'
 CATEGORY_KEY = 'category'
 COMP_INVESTED_KEY = 'composition_invested'
@@ -46,6 +50,7 @@ DESIRED_ALLOCATION_KEY = 'desired_allocation'
 DESIRED_COMP_INV_DIFF_KEY = 'desired_composition_invested_diff'
 ALLOCATION_BREAK_EVEN_KEY = 'allocation_break_even'
 ALLOCATION_BREAK_EVEN_PCT_KEY = 'allocation_break_even_pct'
+DAY_PCT_GAIN_KEY = 'day_pct_gain'
 
 class StockDataConsumer():
 
@@ -238,6 +243,8 @@ class StockDataConsumer():
         realized_pct_gain_a = []
         total_gain_a = []
         total_pct_gain_a = []
+        annualized_pct_return_a = []
+        days_elapsed_a = []
         # The values we need are calculated from these
         stock_dfs = self.get_portfolio_stock_stats()
         for i in range(0, len(dates_a)):
@@ -249,6 +256,9 @@ class StockDataConsumer():
             realized_pct_gain_d = 0
             total_gain_d = 0
             total_pct_gain_d = 0
+            annualized_pct_return_d = 0
+            calculation_date = dates_a[i]
+            days_elapsed = int((calculation_date - self.portfolio_start_date).days)
             # Sum up these values for all the stocks
             for symbol, df in stock_dfs.items():
                 values = df.iloc[i]
@@ -262,6 +272,12 @@ class StockDataConsumer():
                 unrealized_pct_gain_d = (unrealized_gain_d/invested_amount_d)*100
                 realized_pct_gain_d = (realized_gain_d/invested_amount_d)*100
                 total_pct_gain_d = (total_gain_d/invested_amount_d)*100
+                if days_elapsed > 0:
+                    annualized_pct_return_d = (((1+(total_gain_d/invested_amount_d))**(365/days_elapsed))-1)*100
+                    if annualized_pct_return_d > ANNUALIZED_RETURN_UPPER_THRESHOLD:
+                        annualized_pct_return_d = ANNUALIZED_RETURN_UPPER_THRESHOLD
+                    elif annualized_pct_return_d < ANNUALIZED_RETURN_LOWER_THRESHOLD:
+                        annualized_pct_return_d = ANNUALIZED_RETURN_LOWER_THRESHOLD
             else:
                 unrealized_pct_gain_d = 0
                 realized_pct_gain_d = 0
@@ -275,6 +291,8 @@ class StockDataConsumer():
             realized_pct_gain_a.append(realized_pct_gain_d)
             total_gain_a.append(total_gain_d)
             total_pct_gain_a.append(total_pct_gain_d)
+            annualized_pct_return_a.append(annualized_pct_return_d)
+            days_elapsed_a.append(days_elapsed)
         # Create and return final df
         final_df[DATE_KEY] = dates_a
         final_df[INVESTED_AMOUNT_KEY] = invested_amount_a
@@ -285,6 +303,8 @@ class StockDataConsumer():
         final_df[REALIZED_PCT_GAIN_KEY] = realized_pct_gain_a
         final_df[TOTAL_GAIN_KEY] = total_gain_a
         final_df[TOTAL_PCT_GAIN_KEY] = total_pct_gain_a
+        final_df[ANNUALIZED_PCT_RETURN_KEY] = annualized_pct_return_a
+        final_df[DAYS_ELAPSED_KEY] = days_elapsed_a
         return final_df.round(ROUNDING_DECIMAL_PLACES)
     
     def _calculate_portfolio_stock_comparisons(self, stocks: List[Stock]) -> pd.DataFrame:
@@ -315,6 +335,52 @@ class StockDataConsumer():
         df[DATE_KEY] = dates_a
         df[TOTAL_PCT_GAIN_KEY] = portfolio_df[TOTAL_PCT_GAIN_KEY]
         df[MARKET_VALUE_KEY] = portfolio_df[MARKET_VALUE_KEY]
+        df[SYMBOL_KEY] = 'PORTFOLIO'
+        tmp_dfs.append(df)
+        # Create final_df
+        final_df = pd.concat(tmp_dfs)
+        return final_df.round(ROUNDING_DECIMAL_PLACES)
+
+    def _calculate_portfolio_stock_day_comparisons(self, stocks: List[Stock]) -> pd.DataFrame:
+        final_df = pd.DataFrame()
+        dates_a = self.portfolio_market_dates
+        tmp_dfs = []
+        # Calculate pct gain for each index tracker relative to previous day and create a df
+        for s in stocks:
+            df = pd.DataFrame()
+            stock_data = self.stock_df_map[s.symbol]
+            num_dates = len(dates_a)
+            x0 = stock_data.iloc[stock_data.shape[0]-num_dates][CLOSE_KEY]
+            # Ignore gain for first date
+            day_pct_gain_a = []
+            mkt_value_a = [x0]
+            for i in range(1, num_dates):
+                df_index = stock_data.shape[0]-num_dates+i # Offset
+                close_price = stock_data.iloc[df_index][CLOSE_KEY]
+                previous_day_close = mkt_value_a[i-1]
+                day_pct_gain_a.append(((close_price-previous_day_close)/previous_day_close)*100)
+                mkt_value_a.append(close_price)
+            df[DATE_KEY] = dates_a[1:num_dates]
+            df[DAY_PCT_GAIN_KEY] = day_pct_gain_a
+            df[MARKET_VALUE_KEY] = mkt_value_a[1:num_dates]
+            df[SYMBOL_KEY] = s.symbol
+            tmp_dfs.append(df.copy())
+        # Do the same for portfolio total gain
+        portfolio_df = self.portfolio_aggregate_stats
+        df = pd.DataFrame()
+        day_pct_gain_a = []
+        mkt_value_a = []
+        previous_day_pct_gain = portfolio_df.iloc[portfolio_df.shape[0]-num_dates][TOTAL_PCT_GAIN_KEY]
+        for i in range(1, num_dates):
+            df_index = portfolio_df.shape[0]-num_dates+i # Offset
+            today_total_pct_gain = portfolio_df.iloc[df_index][TOTAL_PCT_GAIN_KEY]
+            mkt_value = portfolio_df.iloc[df_index][MARKET_VALUE_KEY]
+            day_pct_gain_a.append(today_total_pct_gain-previous_day_pct_gain)
+            previous_day_pct_gain = today_total_pct_gain
+            mkt_value_a.append(mkt_value)
+        df[DATE_KEY] = dates_a[1:num_dates]
+        df[DAY_PCT_GAIN_KEY] = day_pct_gain_a
+        df[MARKET_VALUE_KEY] = mkt_value_a
         df[SYMBOL_KEY] = 'PORTFOLIO'
         tmp_dfs.append(df)
         # Create final_df
@@ -608,6 +674,12 @@ class StockDataConsumer():
     def get_portfolio_stock_comparison_stats(self) -> pd.DataFrame:
         return self.portfolio_stock_comparisons
 
+    def get_portfolio_watchlist_comparison_stats(self) -> pd.DataFrame:
+        return self.portfolio_watchlist_comparisons
+
+    def get_portfolio_index_day_comparison_stats(self) -> pd.DataFrame:
+        return self.portfolio_index_day_comparisons
+ 
     def run(self):
         if len(self.portfolio_stocks+self.watchlist_stocks+self.index_tracker_stocks) > 0:
             self._derive_base_stock_data()
@@ -617,7 +689,9 @@ class StockDataConsumer():
             self.portfolio_stock_stats[s.symbol] = self._calculate_portfolio_stats_for_stock(symbol=s.symbol)
         self.portfolio_aggregate_stats = self._aggregate_portfolio_stock_stats()
         self.portfolio_index_comparisons = self._calculate_portfolio_stock_comparisons(stocks=self.index_tracker_stocks)
+        self.portfolio_index_day_comparisons = self._calculate_portfolio_stock_day_comparisons(stocks=self.index_tracker_stocks)
         self.portfolio_stock_comparisons = self._calculate_portfolio_stock_comparisons(stocks=self.portfolio_stocks)
+        self.portfolio_watchlist_comparisons = self._calculate_portfolio_stock_comparisons(stocks=self.watchlist_stocks)
         for i in range(0, len(self.portfolio_market_dates)):
             date = self.portfolio_market_dates[i]
             stock_c, category_c = self._calculate_portfolio_composition_stats(index=i)

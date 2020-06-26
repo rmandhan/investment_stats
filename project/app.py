@@ -30,7 +30,8 @@ sdc = stock_data_consumer.StockDataConsumer(all_symbols=sdm.all_symbols,
                                             index_tracker_stocks=sdm.index_tracker_stocks,
                                             watchlist_stocks=sdm.watchlist_stocks,
                                             portfolio_stocks=sdm.portfolio_stocks,
-                                            positions=sdm.positions)
+                                            positions=sdm.positions,
+                                            use_latest_quote=True)
 sdc.run()
 
 portfolio_market_dates = sdc.portfolio_market_dates
@@ -39,6 +40,8 @@ portfolio_stock_stats = sdc.get_portfolio_stock_stats()
 portfolio_aggregated_stats = sdc.get_portfolio_aggregate_stats()
 portfolio_index_comparison_stats = sdc.get_portfolio_index_comparison_stats()
 portfolio_stock_comparison_stats = sdc.get_portfolio_stock_comparison_stats()
+portfolio_watchlist_comparison_stats = sdc.get_portfolio_watchlist_comparison_stats()
+portfolio_index_day_comparison_stats = sdc.get_portfolio_index_day_comparison_stats()
 portfolio_stock_composition_stats = sdc.get_portfolio_stock_composition_stats()
 portfolio_category_composition_stats = sdc.get_portfolio_category_composition_stats()
 
@@ -56,6 +59,10 @@ if PRINT_OUTPUTS:
     sdc._print_df(portfolio_index_comparison_stats)
     print('-------- PORTFOLIO STOCK COMPARISON STATS --------')
     sdc._print_df(portfolio_stock_comparison_stats)
+    print('-------- PORTFOLIO WATCHLIST COMPARISON STATS --------')
+    sdc._print_df(portfolio_watchlist_comparison_stats)
+    print('-------- PORTFOLIO INDEX DAY COMPARISON STATS --------')
+    sdc._print_df(portfolio_index_day_comparison_stats)
     for k,v in portfolio_stock_composition_stats.items():
         print('-------- PORTFOLIO STOCK COMPOSITION STATS FOR {} --------'.format(k))
         sdc._print_df(v)
