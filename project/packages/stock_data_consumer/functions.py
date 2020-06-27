@@ -13,6 +13,7 @@ MAX_DATETIME = datetime(year=9999, month=12, day=31, tzinfo=timezone.utc)
 ROUNDING_DECIMAL_PLACES = 2
 ANNUALIZED_RETURN_UPPER_THRESHOLD = 300
 ANNUALIZED_RETURN_LOWER_THRESHOLD = -100
+ALLOCATION_SOLUTION_UPPER_BOUND_MULTIPLIER = 1
 
 # Pre-defined Data Keys
 SYMBOL_KEY = Stock._symbol_key
@@ -50,6 +51,8 @@ DESIRED_ALLOCATION_KEY = 'desired_allocation'
 DESIRED_COMP_INV_DIFF_KEY = 'desired_composition_invested_diff'
 ALLOCATION_BREAK_EVEN_KEY = 'allocation_break_even'
 ALLOCATION_BREAK_EVEN_PCT_KEY = 'allocation_break_even_pct'
+COMPOSITION_AFTER_REALLOCATION_KEY = 'composition_after_reallocation'
+COMPOSITION_AFTER_REALLOCATION_DIFF_KEY = 'composition_after_reallocation_diff'
 DAY_PCT_GAIN_KEY = 'day_pct_gain'
 
 class StockDataConsumer():
@@ -566,7 +569,8 @@ class StockDataConsumer():
         category_df = self.portfolio_category_composition_stats[date]
 
         current_inv_amount = category_df[INVESTED_AMOUNT_KEY]
-        desired_allocation_amount = category_df[DESIRED_ALLOCATION_KEY].divide(100)
+        desired_allocation_amount = category_df[DESIRED_ALLOCATION_KEY]
+        desired_allocation_amount_fraction = desired_allocation_amount.divide(100)
         unknown_vars_count = category_df.shape[0]
 
         # Define objective & constraints
@@ -586,7 +590,7 @@ class StockDataConsumer():
         # Construct constraint functions
         for i in range(unknown_vars_count):
             inv_amount = current_inv_amount[i]
-            desired_allocation = desired_allocation_amount[i]
+            desired_allocation = desired_allocation_amount_fraction[i]
             code = """def eq_cons_{0:d}(x): return (({1:f}+x[{0:d}])/(sum(x)+{2:f}))-{3:f}""".format(i, inv_amount, inv_amount_sum, desired_allocation)
             exec(code, {}, constraint_funcs)
 
@@ -597,25 +601,34 @@ class StockDataConsumer():
             cons.append({'type': 'ineq', 'fun': constraint_funcs['eq_cons_{0:d}'.format(i)]})
 
         # TODO: Improve bounds & initial guess
-        bnds = [(0.0, inv_amount_sum)] * unknown_vars_count
+        bnds = [(0.0, inv_amount_sum*ALLOCATION_SOLUTION_UPPER_BOUND_MULTIPLIER)] * unknown_vars_count
         x0 = [1] * unknown_vars_count
 
         # Minimize
         sol = minimize(objective, x0, method='SLSQP', bounds=bnds, constraints=cons)
         solution = [0] * unknown_vars_count
-        if sol.success:
-            solution = np.around(sol.x, decimals=2)
+        # if sol.success:
+        solution = np.around(sol.x, decimals=2)
         
         # Construct array based on solution
         break_even_pct = []
+        composition_after_reallocation = []
+        composition_after_reallocation_diff = []
         solution_sum=np.sum(sol.x)
-        for x in sol.x:
+        for i in range(unknown_vars_count):
+            x = sol.x[i]
             pct = np.around((x/solution_sum)*100, decimals=2)
+            after_reallocation = np.around(((current_inv_amount[i]+x)/(solution_sum+inv_amount_sum))*100, decimals=2)
+            after_reallocation_diff = np.around(desired_allocation_amount[i]-after_reallocation, decimals=2)
             break_even_pct.append(pct)
+            composition_after_reallocation.append(after_reallocation)
+            composition_after_reallocation_diff.append(after_reallocation_diff)
 
         final_df[CATEGORY_KEY] = category_df[CATEGORY_KEY]
         final_df[ALLOCATION_BREAK_EVEN_KEY] = solution
         final_df[ALLOCATION_BREAK_EVEN_PCT_KEY] = break_even_pct
+        final_df[COMPOSITION_AFTER_REALLOCATION_KEY] = composition_after_reallocation
+        final_df[COMPOSITION_AFTER_REALLOCATION_DIFF_KEY] = composition_after_reallocation_diff
 
         return final_df
 

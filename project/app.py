@@ -49,6 +49,9 @@ portfolio_category_composition_stats = sdc.get_portfolio_category_composition_st
 date = portfolio_market_dates[len(portfolio_market_dates)-1]
 allocation_solution = sdc.maximize_desired_allocation(date=date)
 
+print('-------- ALLOCATION BREAK EVEN FOR {} --------'.format(date))
+sdc._print_df(allocation_solution)
+
 if PRINT_OUTPUTS:
     for k,v in portfolio_stock_stats.items():
         print('-------- PORTFOLIO STATS FOR {} --------'.format(k))
