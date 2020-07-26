@@ -41,7 +41,7 @@ class FinnhubAPI():
         self.logger.info('Updating latest stock data')
         now = datetime.now(timezone.utc).astimezone()
         q = self._fetch_quote(symbol=symbol)
-        date = datetime.fromtimestamp(q['t']).astimezone(timezone.utc).isoformat()
+        date = datetime.fromtimestamp(q['t']).astimezone(timezone.utc)
         quote = Quote(date=date, high=q['h'], low=q['l'], open=q['o'], close=q['c'], volume=0)
         latest = StockLatest(sync_date=now, quote=quote)
         self.logger.info('Successfully fetched latest stock data')

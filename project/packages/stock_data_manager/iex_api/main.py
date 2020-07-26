@@ -59,7 +59,7 @@ class IEXAPI():
             self.logger.info('Latest stock data currently unavailable')
             latest.sync_date = now
             return latest, 1
-        date = datetime.fromtimestamp(q['latestUpdate']/1000).astimezone(timezone.utc).isoformat()
+        date = datetime.fromtimestamp(q['latestUpdate']/1000).astimezone(timezone.utc)
         quote = Quote(date=date, high=q['high'], low=q['low'], open=q['open'], close=q['close'], volume=q['volume'])
         latest = StockLatest(sync_date=now, quote=quote)
         self.logger.info('Successfully fetched latest stock data')
