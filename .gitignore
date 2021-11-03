@@ -12,14 +12,18 @@ project/logs/*
 
 # Notebooks
 notebooks/*
-!notebooks/stats.ipynb
-!notebooks/stats_other.ipynb
+!notebooks/stats_sample.ipynb
+!notebooks/stats_sample.html
 
-# Ignore Sensitive Inputs
+# Ignore Other Sensitive Inputs
 api_keys/*
 inputs/*
+!inputs/sample.csv
+!inputs/sample_stock_categories.yml
+!inputs/sample_category_allocation.yml
 !inputs/watchlist.yml
 !inputs/index_trackers.csv
+
 # Data Store
 data/*
 
